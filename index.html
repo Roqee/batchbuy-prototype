@@ -283,7 +283,7 @@
     .device-name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
     .device-name { overflow: hidden; font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
     .available-tag { flex: none; padding: 2px 5px; border-radius: 3px; background: var(--green-wash); color: var(--green); font-size: 9px; }
-    .device-sn, .device-phone { overflow: hidden; margin-top: 4px; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .device-sn, .device-phone, .device-project { overflow: hidden; margin-top: 4px; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
     .device-sn { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
     .checkmark {
       display: grid;
@@ -558,7 +558,7 @@
     .header-actions { display: none; }
     .screen { padding: 12px 12px 160px; line-height: 1.15; }
     #screen-orders { padding-bottom: 40px; }
-    #screen-detail { padding-bottom: 140px; }
+    #screen-detail { padding-bottom: 40px; }
     #screen-result { padding: 0; }
     .eyebrow, .intro-title, .intro-copy { display: none !important; }
     .gate { margin: 0; border: 0; border-radius: 0; }
@@ -745,9 +745,14 @@
     .project-button span:first-child[data-placeholder="true"] { color: #ccc; }
     .project-button .chevron { color: #999; font-size: 14px; }
     .search-wrap, .filter-row, .tools-row { display: none !important; }
-    .select-all { display: flex; justify-content: flex-end; margin: 10px 0; }
+    .select-all { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0; }
+    .device-filters { display: flex; flex: 1; min-width: 0; align-items: center; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+    .device-filters::-webkit-scrollbar { display: none; }
+    .device-filter { flex: none; min-height: 26px; padding: 0 6px; border: 1px solid #dfe7e9; border-radius: 4px; background: #fff; color: #666; font-size: 10px; white-space: nowrap; cursor: pointer; }
+    .device-filter[aria-pressed="true"] { border-color: #1b96ff; background: #eaf5fa; color: #105a82; font-weight: 600; }
     .select-all-text {
       display: inline-flex;
+      flex: none;
       min-height: 24px;
       align-items: center;
       gap: 7px;
@@ -774,7 +779,7 @@
     .device-icon { flex: none; width: 32px; height: 32px; object-fit: cover; }
     .device-info { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; margin-left: 14px; }
     .device-name { display: block; overflow: hidden; color: #333; font-size: 16px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
-    .device-sn, .device-phone { display: block; overflow: hidden; margin-top: 0; color: #666; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .device-sn, .device-phone, .device-project { display: block; overflow: hidden; margin-top: 0; color: #666; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
     .device-check {
       display: flex;
       flex: none;
@@ -817,6 +822,7 @@
     }
     .device-plan-toggle > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .device-plan-action { flex: none; }
+    .device-plan-warning { flex: none; padding: 2px 5px; border-radius: 4px; background: #fff0ed; color: #bb4c41; font-size: 10px; line-height: 1.2; white-space: nowrap; }
     .device-plan-arrow { flex: none; color: #999; font-size: 12px; }
     .device-plan-detail {
       margin: 0 0 10px 46px;
@@ -1109,6 +1115,11 @@
           </div>
           <input id="deviceSearch" type="search" value="" hidden>
           <div class="select-all" id="selectAllRow">
+            <div class="device-filters" id="deviceFilters" role="group" aria-label="设备套餐状态筛选">
+              <button class="device-filter" type="button" data-device-filter="all" aria-pressed="true">全部设备</button>
+              <button class="device-filter" type="button" data-device-filter="unactivated" aria-pressed="false">仅未开通</button>
+              <button class="device-filter" type="button" data-device-filter="low-flow" aria-pressed="false">流量即将耗尽</button>
+            </div>
             <button class="select-all-text" id="selectVisibleButton" type="button">
               <img src="assets/select_icon.png" alt=""><span>全选</span>
             </button>
@@ -1139,9 +1150,6 @@
 
     <section class="screen" id="screen-detail" aria-labelledby="detailTitle">
       <div id="detailContent"></div>
-      <footer class="bottom-bar detail-bottom">
-        <button class="primary-button submit-button" type="button" data-screen="buy">继续购买</button>
-      </footer>
     </section>
 
     <footer class="bottom-bar" id="buyFooter">
@@ -1170,6 +1178,7 @@
 
     // 购买页用本地假数据模拟套餐、项目和设备，支付与订单状态仅保存在当前页面内存中。
     const MAX_DEVICE_COUNT = 50;
+    const LOW_FLOW_REMAINING_RATIO = 0.1;
     const packages = [
       { id: "day15", name: "15GB 日享包", price: 1, amount: "15GB", period: "1 天有效", tag: "轻量体验", description: ["15GB 通用流量", "有效期 1 天，自开通后开始计算", "按设备单独开通，适合短期使用"] },
       { id: "quarter90", name: "90GB 季度包", price: 88, amount: "90GB", period: "90 天有效", tag: "项目常用", description: ["90GB 通用流量", "有效期 90 天，自开通后开始计算", "每台设备独立计费"] },
@@ -1181,7 +1190,7 @@
       { id: "warehouse", name: "新港仓储中心" },
       { id: "campus", name: "滨江智慧园区" }
     ];
-    // 覆盖三个项目和单笔上限场景，并混合未开通 PC 套餐的设备用于验证隐藏状态。
+    // 覆盖多个项目、单笔上限、未开通及低流量场景，便于验证设备筛选。
     const devices = [];
     for (let index = 1; index <= 56; index += 1) {
       const projectId = index <= 20 ? "north" : (index <= 38 ? "warehouse" : "campus");
@@ -1190,7 +1199,8 @@
       const planCount = index % 5 === 0 ? 2 : (index % 4 === 0 ? 0 : 1);
       const pcPlans = Array.from({ length: planCount }, function (_, planIndex) {
         const totalGb = [30, 50, 100][(index + planIndex) % 3];
-        const usedGb = Number(((index * 7.3 + planIndex * 9.1) % (totalGb * 0.72)).toFixed(1));
+        const nearDepletion = index % 7 === 0 && planIndex === 0;
+        const usedGb = Number((nearDepletion ? totalGb * 0.95 : (index * 7.3 + planIndex * 9.1) % (totalGb * 0.72)).toFixed(1));
         return {
           name: (planIndex ? "PC畅享流量" : "PC通用流量") + totalGb + "GB套餐",
           totalGb: totalGb,
@@ -1216,6 +1226,7 @@
     const expandedDevicePlans = new Set();
     let currentPackageId = packages[0].id;
     let activeProjectId = "all";
+    let deviceStatusFilter = "all";
     let pendingProjectId = null;
     let pendingCloseOrderId = null;
     let latestOrderId = null;
@@ -1282,6 +1293,7 @@
       buyFooter: document.getElementById("buyFooter"),
       packageList: document.getElementById("packageList"),
       selectAllRow: document.getElementById("selectAllRow"),
+      deviceFilters: document.getElementById("deviceFilters"),
       selectedCount: document.getElementById("selectedCount"),
       availableCount: document.getElementById("availableCount"),
       projectButton: document.getElementById("projectButton"),
@@ -1332,6 +1344,16 @@
       return packageById.get(currentPackageId) || null;
     }
 
+    /** 判断设备是否有已开通套餐剩余流量不超过 10%。
+     * @param {object} device 设备记录
+     * @returns {boolean} 是否即将耗尽
+     */
+    function hasLowFlowPlan(device) {
+      return (device.pcPlans || []).some(function (plan) {
+        return plan.totalGb > 0 && plan.remainingGb / plan.totalGb <= LOW_FLOW_REMAINING_RATIO;
+      });
+    }
+
     /** 统计指定项目内可购买的设备数。
      * @param {string} projectId 项目标识，all 表示全部项目
      * @returns {number} 可购买设备数
@@ -1347,8 +1369,24 @@
       return devices.filter(function (device) {
         const inProject = activeProjectId === "all" || device.projectId === activeProjectId;
         const matches = !query || device.name.toLowerCase().includes(query) || device.sn.toLowerCase().includes(query);
-        return inProject && matches;
+        const hasPlans = (device.pcPlans || []).length > 0;
+        const matchesStatus = deviceStatusFilter === "all" ||
+          (deviceStatusFilter === "unactivated" && !hasPlans) ||
+          (deviceStatusFilter === "low-flow" && hasLowFlowPlan(device));
+        return inProject && matches && matchesStatus;
       });
+    }
+
+    /** 设置设备状态筛选条件，全部设备用于恢复完整列表。
+     * @param {string} filter 筛选条件标识
+     */
+    function toggleDeviceStatusFilter(filter) {
+      if (filter !== "all" && filter !== "unactivated" && filter !== "low-flow") return;
+      deviceStatusFilter = filter;
+      elements.deviceFilters.querySelectorAll("[data-device-filter]").forEach(function (button) {
+        button.setAttribute("aria-pressed", String(button.getAttribute("data-device-filter") === deviceStatusFilter));
+      });
+      renderDevices();
     }
 
     /** 根据当前套餐选择状态渲染套餐卡片。 */
@@ -1373,7 +1411,11 @@
       const selectedCount = selected.size;
       const amount = packageItem ? packageItem.price * selectedCount : 0;
       const currentProject = projects.find(function (project) { return project.id === activeProjectId; });
-      const allSelected = selectedCount === Math.min(visible.length, MAX_DEVICE_COUNT);
+      const selectedVisibleCount = visible.filter(function (device) { return selected.has(device.id); }).length;
+      const hiddenSelectedCount = selectedCount - selectedVisibleCount;
+      const visibleSelectionLimit = Math.min(visible.length, Math.max(0, MAX_DEVICE_COUNT - hiddenSelectedCount));
+      const selectableVisible = visible.slice(0, visibleSelectionLimit);
+      const allSelected = selectableVisible.length > 0 && selectableVisible.every(function (device) { return selected.has(device.id); });
 
       elements.projectLabel.textContent = activeProjectId === "all" ? "选择项目" : (currentProject ? currentProject.name : "选择项目");
       elements.projectLabel.dataset.placeholder = activeProjectId === "all" ? "true" : "false";
@@ -1385,18 +1427,23 @@
       elements.reviewButton.disabled = false;
       elements.reviewButton.classList.toggle("inactive", selectedCount === 0);
       elements.reviewButton.textContent = "确认并支付";
-      elements.selectAllRow.hidden = visible.length === 0;
+      elements.selectAllRow.hidden = false;
+      elements.selectVisibleButton.hidden = visible.length === 0;
       elements.selectVisibleButton.innerHTML = '<img src="assets/select_icon.png" alt=""><span>' + (allSelected && visible.length ? "取消全选" : "全选") + '</span>';
       elements.clearSelectionButton.hidden = true;
       elements.deviceList.innerHTML = visible.length ? visible.map(function (device) {
         const isSelected = selected.has(device.id);
         const plans = device.pcPlans || [];
         const hasPcPlan = plans.length > 0;
+        const nearDepletion = hasLowFlowPlan(device);
+        const project = projects.find(function (item) { return item.id === device.projectId; });
         const planExpanded = hasPcPlan && expandedDevicePlans.has(device.id);
         const planPanelId = "plan-detail-" + device.id;
         const planMarkup = hasPcPlan
           ? '<button class="device-plan-toggle" type="button" data-device-plan="' + escapeHtml(device.id) + '" aria-expanded="' + planExpanded + '" aria-controls="' + planPanelId + '">' +
-              '<span>已开通PC流量套餐' + (plans.length > 1 ? "（" + plans.length + "）" : "") + '</span><span class="device-plan-action">' + (planExpanded ? "收起" : "点击查看") + '</span><span class="device-plan-arrow" aria-hidden="true">' + (planExpanded ? "⌃" : "⌄") + '</span>' +
+              '<span>已开通电脑流量套餐' + (plans.length > 1 ? "（" + plans.length + "）" : "") + '</span>' +
+              (nearDepletion ? '<span class="device-plan-warning">流量即将耗尽</span>' : '') +
+              '<span class="device-plan-action">' + (planExpanded ? "收起" : "查看流量") + '</span><span class="device-plan-arrow" aria-hidden="true">' + (planExpanded ? "⌃" : "⌄") + '</span>' +
             '</button>' +
             '<div class="device-plan-detail" id="' + planPanelId + '"' + (planExpanded ? "" : " hidden") + '>' +
               plans.map(function (plan) {
@@ -1418,6 +1465,7 @@
             '<span class="device-name">' + escapeHtml(device.name) + '</span>' +
             '<span class="device-sn">设备SN：' + escapeHtml(device.sn) + '</span>' +
             '<span class="device-phone">绑定手机号：' + escapeHtml(device.phone) + '</span>' +
+            '<span class="device-project">所属项目：' + escapeHtml(project ? project.name : "未知项目") + '</span>' +
           '</span>' +
           '<span class="device-check ' + (isSelected ? "checked" : "") + '" aria-hidden="true">' + (isSelected ? "✓" : "") + '</span>' +
           '</div>' +
@@ -1440,7 +1488,7 @@
       const arrow = button.querySelector(".device-plan-arrow");
       button.setAttribute("aria-expanded", String(willExpand));
       if (details) details.hidden = !willExpand;
-      if (action) action.textContent = willExpand ? "收起" : "点击查看";
+      if (action) action.textContent = willExpand ? "收起" : "查看流量";
       if (arrow) arrow.textContent = willExpand ? "⌃" : "⌄";
     }
 
@@ -1803,7 +1851,7 @@
         elements.resultContent.innerHTML =
           '<div class="msg-section"><span class="result-icon" aria-hidden="true">✓</span><div class="result-tip">支付成功</div></div>' +
           '<div class="result-detail">' + dataRows(order, false) + renderDeviceRows(order) + '</div>' +
-          '<footer class="bottom-bar result-bottom"><div class="result-actions"><button class="secondary-button" type="button" data-screen="orders">查看订单</button><button class="primary-button" type="button" data-screen="buy">继续购买</button></div></footer>';
+          '<footer class="bottom-bar result-bottom"><button class="primary-button" type="button" data-screen="buy">完成</button></footer>';
       }
     }
 
@@ -1915,30 +1963,34 @@
       renderDevices();
     }
 
-    /** 按当前项目执行全选或取消全选，单次最多选择 50 台。 */
+    /** 按当前可见结果全选或取消全选，保留筛选结果外的已选设备并遵守单笔上限。 */
     function selectVisibleDevices() {
       const visible = visibleDevices();
       if (!visible.length) {
         showToast("当前没有可选设备");
         return;
       }
-      const targetCount = Math.min(visible.length, MAX_DEVICE_COUNT);
-      if (selected.size === targetCount) {
-        selected.clear();
+      const selectedVisibleCount = visible.filter(function (device) { return selected.has(device.id); }).length;
+      const hiddenSelectedCount = selected.size - selectedVisibleCount;
+      const visibleSelectionLimit = Math.min(visible.length, Math.max(0, MAX_DEVICE_COUNT - hiddenSelectedCount));
+      const selectableVisible = visible.slice(0, visibleSelectionLimit);
+      const allSelected = selectableVisible.length > 0 && selectableVisible.every(function (device) { return selected.has(device.id); });
+      if (allSelected) {
+        visible.forEach(function (device) { selected.delete(device.id); });
         renderDevices();
         return;
       }
-      selected.clear();
-      if (targetCount === 0) {
-        showToast("当前没有可选设备");
+      if (visibleSelectionLimit === 0) {
+        showToast("单笔最多选择 " + MAX_DEVICE_COUNT + " 台设备");
         return;
       }
-      visible.slice(0, targetCount).forEach(function (device) { selected.add(device.id); });
+      visible.forEach(function (device) { selected.delete(device.id); });
+      selectableVisible.forEach(function (device) { selected.add(device.id); });
       renderDevices();
-      if (visible.length > MAX_DEVICE_COUNT) {
+      if (selectableVisible.length < visible.length) {
         showToast("单次最多选择 " + MAX_DEVICE_COUNT + " 台设备");
       } else {
-        showToast("已全选当前项目设备");
+        showToast("已全选当前筛选设备");
       }
     }
 
@@ -2105,6 +2157,10 @@
     elements.projectButton.addEventListener("click", openProjectPicker);
     elements.resetProjectButton.addEventListener("click", resetProject);
     elements.deviceSearch.addEventListener("input", renderDevices);
+    elements.deviceFilters.addEventListener("click", function (event) {
+      const filterButton = event.target.closest("[data-device-filter]");
+      if (filterButton) toggleDeviceStatusFilter(filterButton.getAttribute("data-device-filter"));
+    });
     elements.selectVisibleButton.addEventListener("click", selectVisibleDevices);
     elements.clearSelectionButton.addEventListener("click", clearSelection);
     elements.reviewButton.addEventListener("click", openReview);
