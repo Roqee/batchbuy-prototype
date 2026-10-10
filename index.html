@@ -1382,7 +1382,9 @@
      */
     function toggleDeviceStatusFilter(filter) {
       if (filter !== "all" && filter !== "unactivated" && filter !== "low-flow") return;
+      if (deviceStatusFilter === filter) return;
       deviceStatusFilter = filter;
+      selected.clear();
       elements.deviceFilters.querySelectorAll("[data-device-filter]").forEach(function (button) {
         button.setAttribute("aria-pressed", String(button.getAttribute("data-device-filter") === deviceStatusFilter));
       });
