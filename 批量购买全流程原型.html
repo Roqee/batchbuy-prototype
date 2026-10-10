@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f7f8">
+  <title>批量购买 · 全流程交互原型</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202b30;
+      --muted: #718087;
+      --soft: #98a5aa;
+      --line: #e7edef;
+      --paper: #ffffff;
+      --canvas: #f3f6f7;
+      --blue: #1676a8;
+      --blue-dark: #105a82;
+      --blue-wash: #eaf5fa;
+      --green: #16845c;
+      --green-wash: #e9f6ef;
+      --orange: #b86621;
+      --orange-wash: #fff3e6;
+      --red: #bb4c41;
+      --red-wash: #fff0ed;
+      --radius: 8px;
+      --shadow: 0 18px 50px rgba(34, 57, 66, .12);
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, transparent 0 48%, rgba(255,255,255,.3) 48% 49%, transparent 49%) 0 0 / 36px 36px,
+        #e7edef;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .app-shell {
+      position: relative;
+      width: min(100%, 460px);
+      min-height: 100svh;
+      margin: 0 auto;
+      overflow: hidden;
+      background: var(--canvas);
+      box-shadow: var(--shadow);
+    }
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: 42px 1fr 84px;
+      align-items: center;
+      min-height: 58px;
+      padding: max(8px, env(safe-area-inset-top)) 15px 8px;
+      border-bottom: 1px solid rgba(220, 230, 233, .9);
+      background: rgba(255, 255, 255, .94);
+      backdrop-filter: blur(14px);
+    }
+    .icon-button, .header-link, .identity-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 38px;
+      min-height: 38px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+    .icon-button { justify-self: start; font-size: 24px; color: #46575e; }
+    .app-title {
+      margin: 0;
+      overflow: hidden;
+      font-size: 16px;
+      font-weight: 650;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .header-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+    .header-link {
+      width: auto;
+      padding: 0 8px;
+      color: var(--blue);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .identity-button {
+      width: 34px;
+      min-width: 34px;
+      min-height: 34px;
+      border: 1px solid #c8ded1;
+      border-radius: 50%;
+      background: var(--green-wash);
+      color: var(--green);
+      font-weight: 700;
+    }
+    .screen { display: none; padding: 15px 14px calc(130px + env(safe-area-inset-bottom)); }
+    .screen.active { display: block; animation: arrive .22s ease-out both; }
+    @keyframes arrive { from { opacity: .25; } to { opacity: 1; } }
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 1px 2px 13px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .eyebrow-mark { width: 20px; height: 3px; border-radius: 2px; background: var(--green); }
+    .intro-title { margin: 0 2px 4px; font-size: 20px; line-height: 1.35; font-weight: 700; }
+    .intro-copy { margin: 0 2px 15px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .section {
+      margin: 11px 0;
+      padding: 15px;
+      border: 1px solid rgba(228, 235, 237, .8);
+      border-radius: var(--radius);
+      background: var(--paper);
+    }
+    .section-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .section-title { margin: 0; font-size: 15px; font-weight: 700; }
+    .section-meta { color: var(--muted); font-size: 11px; text-align: right; }
+    .package-track {
+      display: grid;
+      grid-auto-columns: minmax(115px, 1fr);
+      grid-auto-flow: column;
+      gap: 9px;
+      overflow-x: auto;
+      padding: 2px 1px 5px;
+      scrollbar-width: thin;
+      scrollbar-color: #c7d7dc transparent;
+      scroll-snap-type: x mandatory;
+    }
+    .package-card {
+      position: relative;
+      min-width: 0;
+      min-height: 126px;
+      padding: 14px 10px 11px;
+      border: 1px solid #dce5e8;
+      border-radius: 7px;
+      background: #fbfcfc;
+      text-align: left;
+      scroll-snap-align: start;
+      cursor: pointer;
+      transition: border-color .18s, background .18s, transform .18s;
+    }
+    .package-card:active { transform: scale(.985); }
+    .package-card.selected {
+      border: 2px solid var(--blue);
+      padding: 13px 9px 10px;
+      background: var(--blue-wash);
+    }
+    .package-tag {
+      display: inline-flex;
+      min-height: 17px;
+      align-items: center;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: var(--green-wash);
+      color: var(--green);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+    .package-name { display: block; margin-top: 7px; font-size: 12px; font-weight: 650; line-height: 1.35; }
+    .package-price { display: block; margin-top: 7px; color: var(--blue-dark); font-size: 21px; font-weight: 750; line-height: 1.1; }
+    .package-price small { margin-left: 2px; color: var(--muted); font-size: 10px; font-weight: 500; }
+    .package-meta { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .package-details {
+      display: block;
+      margin-top: 6px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--blue);
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .device-head { align-items: flex-start; }
+    .count-pair { text-align: right; line-height: 1.55; }
+    .count-pair strong { color: var(--blue-dark); font-size: 12px; }
+    .count-pair span { display: block; color: var(--muted); font-size: 10px; }
+    .filter-row {
+      display: grid;
+      grid-template-columns: 1fr 40px;
+      gap: 7px;
+      margin-bottom: 9px;
+    }
+    .project-button, .search-wrap {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f8fafb;
+    }
+    .project-button {
+      justify-content: space-between;
+      padding: 0 11px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .project-button span:first-child { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .project-button .chevron { color: var(--soft); }
+    .reset-button {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--blue);
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .search-wrap { gap: 7px; padding: 0 10px; margin-bottom: 10px; }
+    .search-icon { color: #829197; font-size: 14px; }
+    .search-wrap input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 12px; }
+    .search-wrap input::placeholder { color: #99a5aa; }
+    .tools-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+    .tools-row .summary-hint { color: var(--muted); font-size: 10px; }
+    .text-button {
+      min-height: 34px;
+      padding: 0 3px;
+      border: 0;
+      background: transparent;
+      color: var(--blue);
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .device-list { border-top: 1px solid var(--line); }
+    .device-row {
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr) 28px;
+      align-items: center;
+      gap: 10px;
+      min-height: 74px;
+      border-bottom: 1px solid #edf1f2;
+      cursor: pointer;
+    }
+    .device-glyph {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border: 1px solid #d3e6ed;
+      border-radius: 8px;
+      background: #eff7fa;
+    }
+    .device-glyph::before {
+      position: absolute;
+      top: 9px;
+      left: 7px;
+      width: 19px;
+      height: 14px;
+      border: 1.5px solid var(--blue);
+      border-radius: 3px;
+      content: "";
+    }
+    .device-glyph::after {
+      position: absolute;
+      top: 13px;
+      left: 14px;
+      width: 6px;
+      height: 6px;
+      border: 1.5px solid var(--blue);
+      border-radius: 50%;
+      content: "";
+    }
+    .device-copy { min-width: 0; }
+    .device-name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .device-name { overflow: hidden; font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .available-tag { flex: none; padding: 2px 5px; border-radius: 3px; background: var(--green-wash); color: var(--green); font-size: 9px; }
+    .device-sn, .device-phone { overflow: hidden; margin-top: 4px; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .device-sn { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+    .checkmark {
+      display: grid;
+      width: 21px;
+      height: 21px;
+      place-items: center;
+      border: 1.5px solid #cbd6d9;
+      border-radius: 50%;
+      color: transparent;
+      font-size: 12px;
+      transition: .16s ease;
+    }
+    .device-row[aria-checked="true"] .checkmark { border-color: var(--blue); background: var(--blue); color: #fff; }
+    .empty-inline { padding: 25px 8px; color: var(--muted); font-size: 12px; text-align: center; }
+    .bottom-bar {
+      position: fixed;
+      z-index: 8;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      width: min(100%, 460px);
+      margin: 0 auto;
+      padding: 11px 17px calc(12px + env(safe-area-inset-bottom));
+      border-top: 1px solid #e4eaec;
+      background: rgba(255,255,255,.97);
+      box-shadow: 0 -7px 22px rgba(49, 77, 87, .08);
+      backdrop-filter: blur(12px);
+    }
+    .price-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .price-summary .selection-copy { color: var(--muted); font-size: 11px; }
+    .price-summary .selection-copy strong { color: var(--ink); font-size: 12px; }
+    .price-summary .total-price { color: var(--blue-dark); font-size: 21px; font-weight: 750; }
+    .primary-button, .secondary-button, .danger-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: transform .15s, opacity .15s, background .15s;
+    }
+    .primary-button:active, .secondary-button:active, .danger-button:active { transform: scale(.985); }
+    .primary-button { width: 100%; background: var(--blue); color: #fff; }
+    .primary-button:hover { background: var(--blue-dark); }
+    .primary-button:disabled { opacity: .42; cursor: not-allowed; }
+    .secondary-button { border-color: #d8e2e5; background: #fff; color: var(--ink); }
+    .danger-button { border-color: #f1d5d1; background: var(--red-wash); color: var(--red); }
+    .wide-button { width: 100%; }
+    .gate {
+      display: none;
+      margin: 28px 0;
+      padding: 29px 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      text-align: center;
+    }
+    .gate.visible { display: block; }
+    .gate-mark {
+      display: grid;
+      width: 54px;
+      height: 54px;
+      margin: 0 auto 14px;
+      place-items: center;
+      border: 1px solid #d9e9ed;
+      border-radius: 50%;
+      background: var(--blue-wash);
+      color: var(--blue);
+      font-size: 21px;
+      font-weight: 700;
+    }
+    .gate h2 { margin: 0; font-size: 17px; }
+    .gate p { margin: 8px 0 19px; color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .result-banner {
+      margin: 3px 0 14px;
+      padding: 22px 16px;
+      border: 1px solid #d9ebe0;
+      border-radius: 8px;
+      background: linear-gradient(115deg, #eff9f3, #fff);
+      text-align: center;
+    }
+    .result-banner.pending { border-color: #efdfc9; background: #fffaf3; }
+    .result-icon {
+      display: grid;
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 10px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--green);
+      color: #fff;
+      font-size: 24px;
+    }
+    .result-banner.pending .result-icon { background: var(--orange); }
+    .result-banner h2 { margin: 0; font-size: 19px; }
+    .result-banner p { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .result-money { margin-top: 13px; color: var(--green); font-size: 26px; font-weight: 750; }
+    .data-card {
+      margin: 11px 0;
+      padding: 3px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .data-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; min-height: 43px; padding: 12px 0; border-bottom: 1px solid #edf1f2; font-size: 12px; }
+    .data-row:last-child { border-bottom: 0; }
+    .data-label { flex: none; color: var(--muted); }
+    .data-value { min-width: 0; overflow-wrap: anywhere; text-align: right; }
+    .data-value.mono { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+    .copy-button { margin-left: 5px; padding: 0; border: 0; background: transparent; color: var(--blue); font-size: 10px; cursor: pointer; }
+    .subheading { margin: 19px 2px 8px; font-size: 14px; font-weight: 700; }
+    .device-card-list, .order-list { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+    .receipt-device { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 12px 14px; border-bottom: 1px solid #edf1f2; }
+    .receipt-device:last-child { border-bottom: 0; }
+    .receipt-name { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+    .receipt-sn { grid-column: 1; color: var(--muted); font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: 10px; }
+    .receipt-status { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--green); font-size: 10px; }
+    .receipt-status.refunded { color: var(--red); }
+    .action-stack { display: grid; gap: 8px; margin-top: 16px; }
+    .inline-link { display: block; margin: 11px auto 0; padding: 6px 10px; border: 0; background: transparent; color: var(--blue); font-size: 11px; cursor: pointer; }
+    .orders-toolbar { position: sticky; top: 58px; z-index: 5; margin: -15px -14px 12px; padding: 10px 14px 0; background: rgba(243,246,247,.96); backdrop-filter: blur(12px); }
+    .filter-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+    .filter-tabs::-webkit-scrollbar { display: none; }
+    .filter-tab { flex: none; min-height: 33px; padding: 0 12px; border: 1px solid #dfe7e9; border-radius: 5px; background: #fff; color: var(--muted); font-size: 11px; cursor: pointer; }
+    .filter-tab.active { border-color: var(--blue); background: var(--blue-wash); color: var(--blue-dark); font-weight: 650; }
+    .order-item { display: block; width: 100%; margin-bottom: 9px; padding: 13px; border: 1px solid var(--line); border-radius: 7px; background: #fff; text-align: left; cursor: pointer; }
+    .order-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .order-package { min-width: 0; font-size: 13px; font-weight: 700; }
+    .order-qty { flex: none; color: var(--muted); font-size: 10px; }
+    .order-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; color: var(--muted); font-size: 10px; }
+    .order-number { overflow: hidden; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; }
+    .status-pill { flex: none; padding: 3px 7px; border-radius: 3px; background: #edf2f3; color: #63737a; font-size: 9px; }
+    .status-pill.success { background: var(--green-wash); color: var(--green); }
+    .status-pill.pending { background: var(--orange-wash); color: var(--orange); }
+    .status-pill.refund { background: var(--red-wash); color: var(--red); }
+    .order-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 9px; border-top: 1px solid #edf1f2; }
+    .order-amount { font-size: 14px; font-weight: 700; }
+    .order-action { color: var(--blue); font-size: 10px; }
+    .empty-state { padding: 42px 15px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--muted); font-size: 12px; text-align: center; }
+    .detail-status {
+      margin-bottom: 11px;
+      padding: 16px;
+      border: 1px solid #dcebe1;
+      border-radius: 8px;
+      background: #f2faf5;
+      text-align: center;
+    }
+    .detail-status.pending { border-color: #ecdec9; background: #fff9f1; }
+    .detail-status.refund { border-color: #f1d8d5; background: #fff6f4; }
+    .detail-status strong { display: block; font-size: 16px; }
+    .detail-status span { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .refund-note { margin: 0 0 11px; padding: 11px 12px; border-left: 3px solid #d6774c; border-radius: 4px; background: #fff4ef; color: #81503b; font-size: 11px; line-height: 1.6; }
+    .screen-footer { display: grid; gap: 8px; margin-top: 15px; }
+    .load-more { display: block; margin: 3px auto 0; padding: 10px 18px; border: 0; background: transparent; color: var(--blue); font-size: 11px; cursor: pointer; }
+    .overlay {
+      position: fixed;
+      z-index: 30;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+      background: rgba(21, 37, 43, .48);
+    }
+    .overlay.visible { display: flex; }
+    .sheet {
+      width: min(100%, 460px);
+      max-height: min(88svh, 760px);
+      overflow: hidden;
+      border-radius: 13px 13px 0 0;
+      background: #fff;
+      box-shadow: 0 -10px 40px rgba(18, 38, 47, .18);
+      animation: rise .2s ease-out both;
+    }
+    @keyframes rise { from { transform: translateY(18px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
+    .sheet-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 17px 13px; border-bottom: 1px solid var(--line); }
+    .sheet-title { margin: 0; font-size: 15px; font-weight: 700; }
+    .sheet-close { width: 32px; height: 32px; border: 0; border-radius: 50%; background: #f1f5f6; color: #62727a; font-size: 19px; cursor: pointer; }
+    .sheet-content { max-height: calc(min(88svh, 760px) - 126px); overflow-y: auto; padding: 14px 17px 18px; }
+    .sheet-footer { display: grid; gap: 8px; padding: 10px 17px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: #fff; }
+    .project-search { width: 100%; height: 40px; margin-bottom: 10px; padding: 0 11px; border: 1px solid var(--line); border-radius: 5px; outline-color: var(--blue); font-size: 12px; }
+    .project-option { display: flex; align-items: center; justify-content: space-between; min-height: 51px; border-bottom: 1px solid #edf1f2; cursor: pointer; }
+    .project-option:last-child { border-bottom: 0; }
+    .project-name { font-size: 12px; font-weight: 600; }
+    .project-count { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .project-selected { color: var(--green); font-size: 12px; }
+    .review-total { display: flex; justify-content: space-between; padding: 12px; border-radius: 5px; background: #f4f8f9; font-size: 11px; }
+    .review-total strong { color: var(--blue-dark); font-size: 15px; }
+    .review-device-list { max-height: 25vh; overflow-y: auto; margin: 10px 0; border: 1px solid var(--line); border-radius: 6px; }
+    .review-device { display: flex; justify-content: space-between; gap: 12px; padding: 9px 10px; border-bottom: 1px solid #edf1f2; }
+    .review-device:last-child { border-bottom: 0; }
+    .review-device span { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .review-device span:last-child { color: var(--muted); font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+    .gateway-brand { display: flex; align-items: center; gap: 10px; margin: 4px 0 15px; }
+    .gateway-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 8px; background: var(--green-wash); color: var(--green); font-weight: 750; }
+    .gateway-mark.ali { background: var(--blue-wash); color: var(--blue); }
+    .gateway-brand strong { display: block; font-size: 13px; }
+    .gateway-brand span { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .gateway-amount { margin: 13px 0; color: var(--ink); font-size: 30px; font-weight: 750; text-align: center; }
+    .gateway-copy { color: var(--muted); font-size: 11px; line-height: 1.6; text-align: center; }
+    .gateway-options { display: grid; gap: 8px; margin-top: 17px; }
+    .gateway-option { min-height: 43px; border: 1px solid #dce5e8; border-radius: 5px; background: #fff; font-size: 12px; cursor: pointer; }
+    .gateway-option.primary { border-color: var(--green); background: var(--green); color: #fff; font-weight: 700; }
+    .gateway-option.sync { color: var(--blue); }
+    .demo-state-list { display: grid; gap: 8px; }
+    .demo-state {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 46px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: #fff;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .demo-state[aria-pressed="true"] { border-color: var(--green); background: var(--green-wash); color: var(--green); }
+    .toast {
+      position: fixed;
+      z-index: 60;
+      bottom: calc(112px + env(safe-area-inset-bottom));
+      left: 50%;
+      max-width: calc(100% - 36px);
+      padding: 10px 14px;
+      transform: translate(-50%, 8px);
+      border-radius: 5px;
+      background: rgba(28, 40, 45, .92);
+      color: #fff;
+      font-size: 11px;
+      line-height: 1.5;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: .18s ease;
+    }
+    .toast.visible { transform: translate(-50%, 0); opacity: 1; }
+    button:focus-visible, [role="checkbox"]:focus-visible, input:focus-visible { outline: 2px solid #56a8cd; outline-offset: 2px; }
+    @media (min-width: 700px) {
+      .app-shell { min-height: min(920px, 100svh); border-right: 1px solid #dce5e8; border-left: 1px solid #dce5e8; }
+      .bottom-bar { position: fixed; }
+    }
+    @media (max-width: 380px) {
+      .screen { padding-right: 10px; padding-left: 10px; }
+      .section { padding: 12px; }
+      .package-track { grid-auto-columns: minmax(106px, 1fr); }
+      .app-header { grid-template-columns: 36px 1fr 74px; padding-right: 9px; padding-left: 9px; }
+      .header-link { padding: 0 5px; font-size: 11px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+
+    /* 购买、订单、详情与支付结果复用项目现有页面的样式参数。 */
+    body { background: #e8e8ec; }
+    .app-shell { width: min(100%, 390px); min-height: 100vh; background: #f2f4f5; box-shadow: 0 0 30px rgba(0, 0, 0, .15); }
+    .app-header {
+      display: grid;
+      grid-template-columns: 38px 1fr 38px;
+      min-height: 44px;
+      padding: 0 12px;
+      border-bottom: 1px solid #f0f0f0;
+      background: #fff;
+      backdrop-filter: none;
+    }
+    .icon-button { width: 32px; min-width: 32px; min-height: 44px; font-size: 22px; color: #333; }
+    .app-title { font-size: 17px; font-weight: 600; }
+    .header-actions { display: none; }
+    .screen { padding: 12px 12px 160px; line-height: 1.15; }
+    #screen-orders { padding-bottom: 40px; }
+    #screen-detail { padding-bottom: 140px; }
+    #screen-result { padding: 0; }
+    .eyebrow, .intro-title, .intro-copy { display: none !important; }
+    .gate { margin: 0; border: 0; border-radius: 0; }
+    .order-record-entry {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 53px;
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+    }
+    .order-record-left { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 500; color: #333; }
+    .order-record-icon { flex: none; width: 33px; height: 33px; }
+    .order-record-arrow { color: #999; font-size: 20px; }
+    #screen-buy .package-section {
+      margin: 12px 0;
+      padding: 0 12px 12px;
+      border: 0;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .package-track {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      gap: 0;
+      overflow: scroll hidden;
+      padding: 0;
+      transform: translateZ(0);
+      scrollbar-width: none;
+      scroll-snap-type: none;
+    }
+    .package-track::-webkit-scrollbar { display: none; }
+    .package-card {
+      position: relative;
+      flex: 0 0 96px;
+      width: 96px;
+      height: 120px;
+      min-height: 120px;
+      padding: 0;
+      margin: 12px 0 0 8px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      text-align: center;
+      scroll-snap-align: none;
+      transition: none;
+    }
+    .package-card.selected { padding: 0; border: 0; background: transparent; }
+    .package-card:active { transform: none; }
+    .package-card:first-child { margin-left: 0; }
+    .package-card:last-child { margin-right: 12px; }
+    .package-inner {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      box-sizing: border-box;
+      border: 2px solid #e5e5e5;
+      border-radius: 8px;
+      background: #fff;
+      text-align: center;
+      transform: translateZ(0);
+    }
+    .package-card.selected .package-inner {
+      border-color: #1b96ff;
+      background: url('assets/combo_bg.jpg') no-repeat;
+      background-size: cover;
+    }
+    .package-name {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      display: block;
+      max-width: 100%;
+      margin: 0;
+      overflow: hidden;
+      color: #999;
+      font-size: 13px;
+      font-weight: 600;
+      text-overflow: clip;
+      white-space: nowrap;
+      transform: translateX(-50%);
+    }
+    .package-price {
+      position: absolute;
+      top: 44px;
+      left: 50%;
+      display: block;
+      margin: 0;
+      color: #999;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: normal;
+      white-space: nowrap;
+      transform: translateX(-50%);
+    }
+    .package-price .big { font-size: 30px; letter-spacing: -2px; }
+    .package-card.selected .package-name,
+    .package-card.selected .package-price { color: #fff; }
+    .package-tag {
+      position: absolute;
+      top: -5px;
+      left: 0;
+      z-index: 2;
+      display: block;
+      box-sizing: border-box;
+      max-width: 100%;
+      min-height: 16px;
+      padding: 0 8px;
+      overflow: hidden;
+      border-radius: 8px 0;
+      background: #9cc6fb;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 400;
+      line-height: 16px;
+      text-align: center;
+      text-overflow: clip;
+      white-space: nowrap;
+      transform: translateZ(0);
+    }
+    .package-card.selected .package-tag { color: #503300; background: linear-gradient(36deg, #ffeccd 0%, #fff4e4 53%, #ffe0af 100%); }
+    .package-sub {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 24px;
+      overflow: hidden;
+      background: #9cc6fb;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 24px;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .package-card.selected .package-sub { background: #ecf6ff; color: #003569; }
+    .device-section {
+      margin: 12px 0 0;
+      padding: 16px 12px 0;
+      border: 0;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .section-heading { margin-bottom: 0; }
+    .device-head { display: flex; align-items: center; justify-content: space-between; }
+    .section-title { margin: 0; color: #333; font-size: 16px; font-weight: 500; }
+    .count-pair { color: #333; font-size: 14px; font-weight: 500; line-height: normal; text-align: right; }
+    .count-pair strong { color: #333; font-size: 14px; font-weight: 500; }
+    .filter-section { margin-top: 14px; }
+    .filter-label { display: flex; align-items: center; margin-bottom: 0; }
+    .filter-text { flex: 1; color: #333; font-size: 15px; }
+    .filter-reset {
+      flex: none;
+      min-height: 28px;
+      padding: 0 0 0 20px;
+      border: 0;
+      background: url('assets/reset_icon.png') no-repeat left center;
+      background-size: 13px auto;
+      color: #35b14e;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .project-button {
+      display: flex;
+      width: 100%;
+      min-height: 40px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 5px;
+      background: #f2f4f5;
+      color: #333;
+      text-align: left;
+    }
+    .project-button span:first-child { flex: 1; color: #333; font-size: 15px; }
+    .project-button span:first-child[data-placeholder="true"] { color: #ccc; }
+    .project-button .chevron { color: #999; font-size: 14px; }
+    .search-wrap, .filter-row, .tools-row { display: none !important; }
+    .select-all { display: flex; justify-content: flex-end; margin: 10px 0; }
+    .select-all-text {
+      display: inline-flex;
+      min-height: 24px;
+      align-items: center;
+      gap: 7px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #35b14e;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .select-all-text img { width: 13px; height: auto; }
+    .device-list { min-height: 110px; border: 0; border-radius: 0; background: transparent; }
+    .device-item { 
+      display: flex;
+      align-items: center;
+      min-height: 0;
+      gap: 0;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(40, 40, 40, .1);
+      cursor: pointer;
+    }
+    .device-item:last-child { border-bottom: 0; }
+    .card .device-item { padding: 12px 0; border: 0; }
+    .device-icon { flex: none; width: 32px; height: 32px; object-fit: cover; }
+    .device-info { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; margin-left: 14px; }
+    .device-name { display: block; overflow: hidden; color: #333; font-size: 16px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+    .device-sn, .device-phone { display: block; overflow: hidden; margin-top: 0; color: #666; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .device-check {
+      display: flex;
+      flex: none;
+      width: 19px;
+      height: 19px;
+      align-items: center;
+      justify-content: center;
+      margin-left: 12px;
+      border: 1.5px solid #1b96ff;
+      border-radius: 50%;
+      color: transparent;
+      font-size: 12px;
+      line-height: 1;
+    }
+    .device-check.checked { background: #1b96ff; color: #fff; }
+    .device-list > .device-card {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-bottom: 1px solid rgba(40, 40, 40, .1);
+      border-radius: 0;
+      background: transparent;
+    }
+    .device-list > .device-card:last-child { border-bottom: 0; }
+    .device-card .device-item { padding: 14px 0 6px; border: 0; }
+    .device-plan-toggle {
+      display: flex;
+      width: calc(100% - 46px);
+      min-height: 30px;
+      align-items: center;
+      gap: 4px;
+      margin-left: 46px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #35b14e;
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .device-plan-toggle > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .device-plan-action { flex: none; }
+    .device-plan-arrow { flex: none; color: #999; font-size: 12px; }
+    .device-plan-detail {
+      margin: 0 0 10px 46px;
+      padding: 8px 0 2px;
+      border-top: 1px solid rgba(40, 40, 40, .08);
+    }
+    .device-plan-entry + .device-plan-entry {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(40, 40, 40, .08);
+    }
+    .device-plan-name, .device-plan-usage, .device-plan-meta {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      color: #666;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .device-plan-name strong, .device-plan-usage strong { color: #333; font-weight: 500; }
+    .device-plan-name strong { overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+    .device-plan-usage { margin-top: 5px; }
+    .device-plan-usage strong { color: #35b14e; }
+    .device-plan-meter { height: 5px; margin-top: 6px; overflow: hidden; border-radius: 4px; background: #e5e5e5; }
+    .device-plan-meter span { display: block; height: 100%; border-radius: inherit; background: #35b14e; }
+    .device-plan-meta { flex-wrap: wrap; margin-top: 5px; color: #888; font-size: 10px; }
+    .empty-inline { padding: 40px 0; color: #666; font-size: 15px; font-weight: 500; text-align: center; }
+    .bottom-bar {
+      position: fixed;
+      z-index: 8;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      width: min(100%, 390px);
+      margin: 0 auto;
+      padding: 20px 30px calc(env(safe-area-inset-bottom) + 27px);
+      border: 0;
+      background: #fff;
+      box-shadow: 0 -4px 21px rgba(123, 185, 204, .4);
+      backdrop-filter: none;
+    }
+    .price-summary { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .selection-copy { color: #666; font-size: 13px; }
+    .selection-copy strong { color: #666; font-size: 13px; font-weight: 400; }
+    .selection-copy span { display: none; }
+    .total-price { color: #368dfa; font-size: 24px; font-weight: 700; }
+    .primary-button.submit-button {
+      width: 100%;
+      height: 43px;
+      min-height: 43px;
+      padding: 0;
+      border: 0;
+      border-radius: 22px;
+      background: #1b96ff;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 43px;
+      text-align: center;
+    }
+    .primary-button.submit-button:hover { background: #1b96ff; }
+    .primary-button.submit-button:disabled { opacity: 1; }
+    .primary-button.submit-button.inactive { opacity: .4; }
+    .overlay { z-index: 30; padding: 0; background: rgba(0, 0, 0, .45); }
+    .sheet {
+      width: min(100%, 390px);
+      max-height: 90vh;
+      border-radius: 10px 10px 0 0;
+      background: #fff;
+      box-shadow: none;
+      animation: none;
+    }
+    .sheet-header { justify-content: center; padding: 20px 16px 0; border: 0; }
+    .sheet-title { margin: 0 0 20px; color: #333; font-size: 17px; font-weight: 600; text-align: center; }
+    .sheet-close, .sheet-footer { display: none; }
+    .overlay[data-mode="projects"] .sheet-footer,
+    .overlay[data-mode="close-order"] .sheet-footer { display: grid; }
+    .overlay[data-mode="switch-project"] .sheet-footer { display: grid; }
+    .sheet-content { max-height: 65vh; padding: 0 16px 16px; }
+    .info-row { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid rgba(40, 40, 40, .1); }
+    .info-name { max-width: 45%; overflow: hidden; color: #333; font-size: 14px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+    .info-value { flex: 1; min-width: 0; margin-left: 10px; overflow-wrap: anywhere; color: #666; font-size: 14px; text-align: right; }
+    .section-title { padding-top: 14px; color: #333; font-size: 15px; font-weight: 500; }
+    .screen .section-title { margin: 22px 0 8px 3px; padding: 0; color: #333; font-size: 16px; font-weight: 500; }
+    .screen .section-title:first-child { margin-top: 0; }
+    #screen-buy .section-title { margin: 0; padding: 0; font-size: 16px; }
+    .sheet-content .section-title { margin: 0; padding: 14px 0 0; font-size: 15px; }
+    .device-scroll { max-height: 50vh; padding-left: 10px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .device-scroll .info-row:last-child { border-bottom: 0; }
+    .total-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+    .total-label { color: #333; font-size: 15px; }
+    .total-amount { color: #ff6815; font-size: 18px; font-weight: 700; }
+    .pay-buttons { display: flex; align-items: center; justify-content: center; gap: 20px; }
+    .pay-button {
+      display: flex;
+      flex: 1;
+      height: 36px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 5px;
+      border: 0;
+      border-radius: 7.5px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .pay-button.wechat { background: #1fa738; }
+    .pay-button.alipay { background: #1b84fb; }
+    .pay-button img { flex: none; width: 20px; height: 20px; object-fit: contain; }
+    .project-option {
+      display: flex;
+      width: 100%;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      border: 0;
+      border-bottom: 1px solid #f1f1f1;
+      background: #fff;
+      color: #333;
+      font-size: 15px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .sheet-footer { padding: 8px 16px calc(12px + env(safe-area-inset-bottom)); border: 0; }
+    .sheet-footer .secondary-button { min-height: 42px; border: 0; border-radius: 5px; background: #f2f4f5; color: #666; font-size: 15px; }
+    .orders-toolbar { display: none !important; }
+    .order-list { overflow: visible; border: 0; border-radius: 0; background: transparent; }
+    .order-item {
+      display: block;
+      width: 100%;
+      margin: 0 0 12px;
+      padding: 14px 12px;
+      border: 0;
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+    }
+    .order-inner { display: flex; align-items: flex-start; justify-content: space-between; }
+    .order-content { flex: 1; min-width: 0; margin-right: 12px; }
+    .order-package { display: block; color: #333; font-size: 16px; font-weight: 500; }
+    .order-number { display: block; margin-top: 6px; color: #666; font-family: inherit; font-size: 12px; }
+    .order-time { display: block; margin-top: 4px; color: #666; font-size: 12px; }
+    .order-content .order-amount { margin-top: 4px; color: #666; font-size: 12px; font-weight: 400; }
+    .order-content .order-amount strong { color: #35b14e; font-size: 12px; font-weight: 500; }
+    .order-meta { display: flex; flex: none; flex-direction: column; align-items: flex-end; gap: 8px; margin: 0; color: #666; font-size: 12px; }
+    .order-meta-top { display: flex; align-items: center; gap: 6px; }
+    .order-qty { color: #666; font-size: 12px; white-space: nowrap; }
+    .status-pill { display: inline-block; height: 17px; padding: 0 10px; border-radius: 8px; background: transparent; color: #666; font-size: 11px; line-height: 17px; white-space: nowrap; }
+    .status-pill.success { background: #edf9e7; color: #35b14e; }
+    .status-pill.pending { background: #ffebdc; color: #ff6815; }
+    .status-pill.refund { background: #faecec; color: #ee4134; }
+    .order-view { color: #666; font-size: 11px; }
+    .order-bottom { display: none; }
+    .empty-state { margin-top: 200px; padding: 0; border: 0; border-radius: 0; background: transparent; color: #666; font-size: 15px; font-weight: 500; text-align: center; }
+    .load-more { display: block; margin: 0 auto; padding: 10px 18px; border: 0; background: transparent; color: #999; font-size: 12px; cursor: pointer; }
+    .detail-status, .refund-note { display: none; }
+    .card { padding: 0 12px; border-radius: 10px; background: #fff; }
+    .row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+    .label { flex: none; color: #333; font-size: 15px; }
+    .value { color: #666; font-size: 15px; text-align: right; word-break: break-all; }
+    .divider { height: 1px; background: rgba(40, 40, 40, .1); }
+    .total-amount { color: #35b14e !important; }
+    .device-item .device-inner { flex: 1; min-width: 0; }
+    .device-label { color: #333; font-size: 15px; }
+    .device-item .device-sn { margin-top: 6px; color: #666; font-size: 12px; }
+    .device-status { display: inline-block; height: 17px; padding: 0 10px; border-radius: 8px; background: #faecec; color: #ee4134; font-size: 11px; line-height: 17px; white-space: nowrap; }
+    .detail-actions { display: grid; gap: 8px; margin-top: 16px; }
+    .subheading { margin: 22px 0 8px 3px; color: #333; font-size: 16px; font-weight: 500; }
+    .data-card { margin: 0; padding: 0 12px; border: 0; border-radius: 10px; background: #fff; }
+    .data-row { min-height: 0; padding: 14px 0; border: 0; font-size: 15px; }
+    .data-row + .data-row { border-top: 1px solid rgba(40, 40, 40, .1); }
+    .data-label { color: #333; font-size: 15px; }
+    .data-value { color: #666; font-size: 15px; text-align: right; }
+    .data-value.price { color: #35b14e; }
+    .device-card-list { overflow: hidden; padding: 0 12px; border: 0; border-radius: 10px; background: #fff; }
+    .receipt-device { display: flex; align-items: center; gap: 0; padding: 12px 0; border: 0; }
+    .receipt-device + .receipt-device { border-top: 1px solid rgba(40, 40, 40, .1); }
+    .receipt-name { display: none; }
+    .receipt-sn { flex: 1; min-width: 0; grid-column: auto; color: #666; font-family: inherit; font-size: 12px; }
+    .receipt-status { flex: none; grid-column: auto; grid-row: auto; align-self: auto; color: #666; }
+    .receipt-status.refunded { height: 17px; padding: 0 10px; border-radius: 8px; background: #faecec; color: #ee4134; font-size: 11px; line-height: 17px; }
+    .screen-footer { display: grid; gap: 8px; margin-top: 16px; }
+    .screen-footer .primary-button, .screen-footer .secondary-button, .danger-button {
+      min-height: 43px;
+      border-radius: 22px;
+      font-size: 16px;
+    }
+    .screen-footer .primary-button { background: #1b96ff; color: #fff; }
+    .screen-footer .secondary-button { border: 0; background: #edf1f2; color: #333; }
+    .app-shell.is-error { background: #fff; }
+    .msg-section { padding: 48px 0 44px; text-align: center; }
+    .result-icon {
+      position: relative;
+      display: inline-flex;
+      width: 64px;
+      height: 64px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      border-radius: 50%;
+      background: #35b14e;
+      color: #fff;
+      font-size: 42px;
+      font-weight: 400;
+      line-height: 1;
+    }
+    .result-icon.error { background: #fa5151; color: #fff; }
+    .result-icon.loading { border: 5px solid #e5e5e5; border-right-color: transparent; background: transparent; color: transparent; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result-tip { color: #333; font-size: 20px; font-weight: 500; }
+    .result-detail { padding: 0 12px 140px; }
+    .result-bottom { padding: 20px 30px calc(env(safe-area-inset-bottom) + 27px); }
+    .result-bottom .primary-button { width: 100%; height: 43px; min-height: 43px; padding: 0; border: 0; border-radius: 22px; background: #1b96ff; color: #fff; font-size: 17px; font-weight: 500; line-height: 43px; }
+    .result-actions { display: flex; gap: 10px; }
+    .result-actions .primary-button, .result-actions .secondary-button {
+      flex: 1;
+      width: auto;
+      height: 43px;
+      min-height: 43px;
+      padding: 0;
+      border-radius: 22px;
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 43px;
+    }
+    .result-actions .primary-button { border: 0; background: #1b96ff; color: #fff; }
+    .result-actions .secondary-button { border: 1px solid #1b96ff; background: #fff; color: #1b96ff; }
+    .overlay[data-mode="projects"] .sheet-header { display: none; }
+    .overlay[data-mode="projects"] .sheet-content { padding-top: 0; }
+    .copy-button { margin-left: 6px; padding: 0; border: 0; background: transparent; color: #1b96ff; font-size: 12px; cursor: pointer; }
+    .app-header { display: none; }
+    .app-shell.has-route-header .app-header { display: grid; }
+    .toast { bottom: 120px; padding: 8px 16px; border-radius: 20px; font-size: 13px; }
+    @media (max-width: 390px) {
+      .app-shell { width: 100%; }
+      .bottom-bar, .sheet { width: 100%; }
+    }
+    @media (max-width: 380px) {
+      .device-plan-toggle { font-size: 11px; }
+      .device-plan-name, .device-plan-usage { font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <button class="icon-button" id="backButton" type="button" aria-label="返回上一页">‹</button>
+      <h1 class="app-title" id="pageTitle">批量购买</h1>
+      <div class="header-actions">
+        <button class="header-link" id="ordersButton" type="button">订单记录</button>
+        <button class="identity-button" id="identityButton" type="button" aria-label="切换演示身份" title="演示身份">工</button>
+      </div>
+    </header>
+
+    <section class="screen active" id="screen-buy" aria-labelledby="buyTitle">
+      <div class="gate" id="identityGate"></div>
+      <div id="buyContent">
+        <div class="order-record-entry" id="buyOrderEntry" role="button" tabindex="0">
+          <span class="order-record-left">
+            <img class="order-record-icon" src="assets/buy_icon_order.png" alt="">
+            <span>订单记录</span>
+          </span>
+          <span class="order-record-arrow" aria-hidden="true">›</span>
+        </div>
+
+        <section class="section package-section" aria-label="套餐列表">
+          <div class="package-track" id="packageList"></div>
+        </section>
+
+        <section class="section device-section" aria-labelledby="deviceHeading">
+          <div class="section-heading device-head">
+            <h3 class="section-title" id="deviceHeading">选择设备</h3>
+            <div class="count-pair">
+              <strong id="selectedCount">已选 0 / 50 台</strong>
+              <span id="availableCount" hidden>可购买 0 台</span>
+            </div>
+          </div>
+          <div class="filter-section">
+            <div class="filter-label">
+              <span class="filter-text">项目筛选</span>
+              <button class="filter-reset" id="resetProjectButton" type="button">重置</button>
+            </div>
+            <button class="project-button" id="projectButton" type="button">
+              <span id="projectLabel">选择项目</span><span class="chevron" aria-hidden="true">⌄</span>
+            </button>
+          </div>
+          <input id="deviceSearch" type="search" value="" hidden>
+          <div class="select-all" id="selectAllRow">
+            <button class="select-all-text" id="selectVisibleButton" type="button">
+              <img src="assets/select_icon.png" alt=""><span>全选</span>
+            </button>
+            <button class="text-button" id="clearSelectionButton" type="button" hidden>取消全选</button>
+          </div>
+          <div class="device-list" id="deviceList" aria-live="polite"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-result" aria-labelledby="resultTitle">
+      <div id="resultContent"></div>
+    </section>
+
+    <section class="screen" id="screen-orders" aria-labelledby="ordersHeading">
+      <div class="orders-toolbar" hidden>
+        <div class="section-heading"><h2 class="section-title" id="ordersHeading">订单记录</h2><span class="section-meta" id="orderCount"></span></div>
+        <div class="filter-tabs" id="orderFilters" role="tablist" aria-label="订单状态筛选">
+          <button class="filter-tab active" type="button" data-filter="all" role="tab" aria-selected="true">全部</button>
+          <button class="filter-tab" type="button" data-filter="pending" role="tab" aria-selected="false">待支付</button>
+          <button class="filter-tab" type="button" data-filter="success" role="tab" aria-selected="false">已开通</button>
+          <button class="filter-tab" type="button" data-filter="refund" role="tab" aria-selected="false">退款/关闭</button>
+        </div>
+      </div>
+      <div class="order-list" id="orderList"></div>
+      <button class="load-more" id="loadMoreButton" type="button">加载更多订单</button>
+    </section>
+
+    <section class="screen" id="screen-detail" aria-labelledby="detailTitle">
+      <div id="detailContent"></div>
+    </section>
+
+    <footer class="bottom-bar" id="buyFooter">
+      <div class="price-summary" id="priceSummary">
+        <div class="selection-copy"><strong id="barCount">已选 0 台</strong><br><span id="unitSummary">选择设备后计算金额</span></div>
+        <div class="total-price" id="barTotal">¥0.00</div>
+      </div>
+      <button class="primary-button submit-button" id="reviewButton" type="button">确认并支付</button>
+    </footer>
+
+    <div class="overlay" id="overlay" role="presentation">
+      <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+        <header class="sheet-header">
+          <h2 class="sheet-title" id="sheetTitle">确认订单</h2>
+          <button class="sheet-close" id="sheetClose" type="button" aria-label="关闭">×</button>
+        </header>
+        <div class="sheet-content" id="sheetContent"></div>
+        <footer class="sheet-footer" id="sheetFooter"></footer>
+      </section>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script>
+    "use strict";
+
+    // 购买页用本地假数据模拟套餐、项目和设备，支付与订单状态仅保存在当前页面内存中。
+    const MAX_DEVICE_COUNT = 50;
+    const packages = [
+      { id: "day15", name: "15GB 日享包", price: 1, amount: "15GB", period: "1 天有效", tag: "轻量体验", description: ["15GB 通用流量", "有效期 1 天，自开通后开始计算", "按设备单独开通，适合短期使用"] },
+      { id: "quarter90", name: "90GB 季度包", price: 88, amount: "90GB", period: "90 天有效", tag: "项目常用", description: ["90GB 通用流量", "有效期 90 天，自开通后开始计算", "每台设备独立计费"] },
+      { id: "year240", name: "240GB 年度包", price: 198, amount: "240GB", period: "360 天有效", tag: "年度服务", description: ["240GB 通用流量", "有效期 360 天，自开通后开始计算", "流量与有效期以服务规则为准"] }
+    ];
+    const projects = [
+      { id: "all", name: "全部项目" },
+      { id: "north", name: "华东园区改造项目" },
+      { id: "warehouse", name: "新港仓储中心" },
+      { id: "campus", name: "滨江智慧园区" }
+    ];
+    // 覆盖三个项目和单笔上限场景，并混合未开通 PC 套餐的设备用于验证隐藏状态。
+    const devices = [];
+    for (let index = 1; index <= 56; index += 1) {
+      const projectId = index <= 20 ? "north" : (index <= 38 ? "warehouse" : "campus");
+      const prefix = projectId === "north" ? "E30" : (projectId === "warehouse" ? "IPC" : "DVR");
+      const hex = (0x0c910000 + index * 7429).toString(16).toUpperCase().padStart(16, "0");
+      const planCount = index % 5 === 0 ? 2 : (index % 4 === 0 ? 0 : 1);
+      const pcPlans = Array.from({ length: planCount }, function (_, planIndex) {
+        const totalGb = [30, 50, 100][(index + planIndex) % 3];
+        const usedGb = Number(((index * 7.3 + planIndex * 9.1) % (totalGb * 0.72)).toFixed(1));
+        return {
+          name: (planIndex ? "PC畅享流量" : "PC通用流量") + totalGb + "GB套餐",
+          totalGb: totalGb,
+          usedGb: usedGb,
+          remainingGb: Number((totalGb - usedGb).toFixed(1)),
+          usageRate: Number((usedGb / totalGb * 100).toFixed(1)),
+          period: planIndex ? "2026-10-10 至 2026-11-09" : "2026-10-01 至 2026-10-31"
+        };
+      });
+      devices.push({
+        id: "device-" + index,
+        name: prefix + " 设备 · " + ["主入口", "仓库东侧", "停车区", "机房", "装卸口", "通道"][((index - 1) % 6)],
+        sn: hex,
+        phone: ["138****8000", "139****2314", "186****0516"][index % 3],
+        projectId: projectId,
+        pcPlans: pcPlans
+      });
+    }
+
+    const deviceById = new Map(devices.map(function (device) { return [device.id, device]; }));
+    const packageById = new Map(packages.map(function (item) { return [item.id, item]; }));
+    const selected = new Set();
+    const expandedDevicePlans = new Set();
+    let currentPackageId = packages[0].id;
+    let activeProjectId = "all";
+    let pendingProjectId = null;
+    let pendingCloseOrderId = null;
+    let latestOrderId = null;
+    let resultStatus = "loading";
+    let currentDetailId = null;
+    let currentFilter = "all";
+    let visibleOrderCount = 5;
+    let screenStack = ["buy"];
+    let activeModal = "";
+    let toastTimer = null;
+    let demoIdentity = new URLSearchParams(window.location.search).get("identity") || "engineer";
+    let orderSequence = 1006;
+
+    /** 创建订单记录假数据。
+     * @param {string} id 订单号
+     * @param {string} packageId 套餐标识
+     * @param {number} count 购买设备数
+     * @param {string} status 订单状态
+     * @param {string} date 下单时间
+     * @param {string[]} deviceIds 设备标识列表
+     * @param {string} payType 支付方式
+     */
+    function makeOrder(id, packageId, count, status, date, deviceIds, payType) {
+      const packageItem = packageById.get(packageId);
+      return {
+        id: id,
+        packageId: packageId,
+        packageName: packageItem.name,
+        count: count,
+        amount: packageItem.price * count,
+        status: status,
+        createdAt: date,
+        paidAt: status === "success" || status === "partial" || status === "refunded" ? date : "",
+        payType: payType || "微信支付",
+        deviceIds: deviceIds,
+        willSync: false
+      };
+    }
+
+    const orders = [
+      makeOrder("BB20261009102415", "quarter90", 6, "pending", "2026-10-09 10:24", devices.slice(0, 6).map(function (d) { return d.id; }), "支付宝"),
+      makeOrder("BB20261008174522", "day15", 3, "success", "2026-10-08 17:45", devices.slice(6, 9).map(function (d) { return d.id; }), "微信支付"),
+      makeOrder("BB20261007132640", "quarter90", 8, "partial", "2026-10-07 13:26", devices.slice(9, 17).map(function (d) { return d.id; }), "支付宝"),
+      makeOrder("BB20261006105118", "day15", 2, "refunded", "2026-10-06 10:51", devices.slice(17, 19).map(function (d) { return d.id; }), "微信支付"),
+      makeOrder("BB20261005160007", "year240", 4, "closed", "2026-10-05 16:00", devices.slice(19, 23).map(function (d) { return d.id; }), "支付宝")
+    ];
+
+    const screenTitles = {
+      buy: "批量购买",
+      result: "支付结果",
+      orders: "订单记录",
+      detail: "订单详情"
+    };
+
+    const elements = {
+      pageTitle: document.getElementById("pageTitle"),
+      appShell: document.querySelector(".app-shell"),
+      backButton: document.getElementById("backButton"),
+      ordersButton: document.getElementById("ordersButton"),
+      buyOrderEntry: document.getElementById("buyOrderEntry"),
+      identityButton: document.getElementById("identityButton"),
+      identityGate: document.getElementById("identityGate"),
+      buyContent: document.getElementById("buyContent"),
+      buyFooter: document.getElementById("buyFooter"),
+      packageList: document.getElementById("packageList"),
+      selectAllRow: document.getElementById("selectAllRow"),
+      selectedCount: document.getElementById("selectedCount"),
+      availableCount: document.getElementById("availableCount"),
+      projectButton: document.getElementById("projectButton"),
+      projectLabel: document.getElementById("projectLabel"),
+      resetProjectButton: document.getElementById("resetProjectButton"),
+      deviceSearch: document.getElementById("deviceSearch"),
+      selectVisibleButton: document.getElementById("selectVisibleButton"),
+      clearSelectionButton: document.getElementById("clearSelectionButton"),
+      deviceList: document.getElementById("deviceList"),
+      barCount: document.getElementById("barCount"),
+      unitSummary: document.getElementById("unitSummary"),
+      barTotal: document.getElementById("barTotal"),
+      priceSummary: document.getElementById("priceSummary"),
+      reviewButton: document.getElementById("reviewButton"),
+      resultContent: document.getElementById("resultContent"),
+      orderFilters: document.getElementById("orderFilters"),
+      orderCount: document.getElementById("orderCount"),
+      orderList: document.getElementById("orderList"),
+      loadMoreButton: document.getElementById("loadMoreButton"),
+      detailContent: document.getElementById("detailContent"),
+      overlay: document.getElementById("overlay"),
+      sheetTitle: document.getElementById("sheetTitle"),
+      sheetContent: document.getElementById("sheetContent"),
+      sheetFooter: document.getElementById("sheetFooter"),
+      sheetClose: document.getElementById("sheetClose"),
+      toast: document.getElementById("toast")
+    };
+
+    /** 转义动态文本，防止被解释为 HTML 结构。
+     * @param {unknown} value 待显示的文本
+     * @returns {string} 转义后的文本
+     */
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, function (character) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[character];
+      });
+    }
+
+    /** 将金额统一格式化为两位小数。
+     * @param {number|string} value 金额数值
+     * @returns {string} 带人民币符号的金额
+     */
+    function money(value) {
+      return "¥" + Number(value).toFixed(2);
+    }
+
+    function currentPackage() {
+      return packageById.get(currentPackageId) || null;
+    }
+
+    /** 统计指定项目内可购买的设备数。
+     * @param {string} projectId 项目标识，all 表示全部项目
+     * @returns {number} 可购买设备数
+     */
+    function projectDeviceCount(projectId) {
+      if (projectId === "all") return devices.length;
+      return devices.filter(function (device) { return device.projectId === projectId; }).length;
+    }
+
+    /** 根据项目和关键字计算当前列表结果。 */
+    function visibleDevices() {
+      const query = elements.deviceSearch.value.trim().toLowerCase();
+      return devices.filter(function (device) {
+        const inProject = activeProjectId === "all" || device.projectId === activeProjectId;
+        const matches = !query || device.name.toLowerCase().includes(query) || device.sn.toLowerCase().includes(query);
+        return inProject && matches;
+      });
+    }
+
+    /** 根据当前套餐选择状态渲染套餐卡片。 */
+    function renderPackages() {
+      elements.packageList.innerHTML = packages.map(function (item) {
+        const selectedClass = item.id === currentPackageId ? " selected" : "";
+        return '<div class="package-card' + selectedClass + '" role="radio" tabindex="0" data-package="' + escapeHtml(item.id) + '" aria-checked="' + (item.id === currentPackageId) + '">' +
+          '<div class="package-inner">' +
+            '<div class="package-name">' + escapeHtml(item.name) + '</div>' +
+            '<div class="package-price"><span>¥</span><span class="big">' + escapeHtml(item.price) + '</span></div>' +
+            '<div class="package-sub">' + escapeHtml(item.period) + '</div>' +
+          '</div>' +
+          (item.tag ? '<div class="package-tag">' + escapeHtml(item.tag) + '</div>' : '') +
+          '</div>';
+      }).join("");
+    }
+
+    /** 刷新设备列表、已选数量与底部实时金额。 */
+    function renderDevices() {
+      const visible = visibleDevices();
+      const packageItem = currentPackage();
+      const selectedCount = selected.size;
+      const amount = packageItem ? packageItem.price * selectedCount : 0;
+      const currentProject = projects.find(function (project) { return project.id === activeProjectId; });
+      const allSelected = selectedCount === Math.min(visible.length, MAX_DEVICE_COUNT);
+
+      elements.projectLabel.textContent = activeProjectId === "all" ? "选择项目" : (currentProject ? currentProject.name : "选择项目");
+      elements.projectLabel.dataset.placeholder = activeProjectId === "all" ? "true" : "false";
+      elements.selectedCount.textContent = "已选" + selectedCount + "/" + MAX_DEVICE_COUNT + "台";
+      elements.availableCount.textContent = "可购买 " + projectDeviceCount(activeProjectId) + " 台";
+      elements.barCount.textContent = "已选 " + selectedCount + " 台";
+      elements.unitSummary.textContent = "";
+      elements.barTotal.textContent = money(amount);
+      elements.reviewButton.disabled = false;
+      elements.reviewButton.classList.toggle("inactive", selectedCount === 0);
+      elements.reviewButton.textContent = "确认并支付";
+      elements.selectAllRow.hidden = visible.length === 0;
+      elements.selectVisibleButton.innerHTML = '<img src="assets/select_icon.png" alt=""><span>' + (allSelected && visible.length ? "取消全选" : "全选") + '</span>';
+      elements.clearSelectionButton.hidden = true;
+      elements.deviceList.innerHTML = visible.length ? visible.map(function (device) {
+        const isSelected = selected.has(device.id);
+        const plans = device.pcPlans || [];
+        const hasPcPlan = plans.length > 0;
+        const planExpanded = hasPcPlan && expandedDevicePlans.has(device.id);
+        const planPanelId = "plan-detail-" + device.id;
+        const planMarkup = hasPcPlan
+          ? '<button class="device-plan-toggle" type="button" data-device-plan="' + escapeHtml(device.id) + '" aria-expanded="' + planExpanded + '" aria-controls="' + planPanelId + '">' +
+              '<span>已开通PC流量套餐' + (plans.length > 1 ? "（" + plans.length + "）" : "") + '</span><span class="device-plan-action">' + (planExpanded ? "收起" : "点击查看") + '</span><span class="device-plan-arrow" aria-hidden="true">' + (planExpanded ? "⌃" : "⌄") + '</span>' +
+            '</button>' +
+            '<div class="device-plan-detail" id="' + planPanelId + '"' + (planExpanded ? "" : " hidden") + '>' +
+              plans.map(function (plan) {
+                return '<div class="device-plan-entry">' +
+                  '<div class="device-plan-name"><span>套餐名称</span><strong>' + escapeHtml(plan.name) + '</strong></div>' +
+                  '<div class="device-plan-usage"><span>套餐用量</span><span><strong>' + plan.usedGb.toFixed(1) + 'GB</strong> / ' + plan.totalGb + 'GB</span></div>' +
+                  '<div class="device-plan-meter" role="progressbar" aria-valuemin="0" aria-valuemax="' + plan.totalGb + '" aria-valuenow="' + plan.usedGb + '" aria-label="' + escapeHtml(plan.name) + '已用流量">' +
+                    '<span style="width:' + plan.usageRate + '%"></span>' +
+                  '</div>' +
+                  '<div class="device-plan-meta"><span>剩余 ' + plan.remainingGb.toFixed(1) + 'GB</span><span>' + escapeHtml(plan.period) + '</span></div>' +
+                '</div>';
+              }).join("") +
+            '</div>'
+          : "";
+        return '<div class="device-card" data-device-card="' + escapeHtml(device.id) + '">' +
+          '<div class="device-item" role="checkbox" tabindex="0" aria-checked="' + isSelected + '" data-device="' + escapeHtml(device.id) + '">' +
+          '<img class="device-icon" src="assets/buy_icon_device.png" alt="">' +
+          '<span class="device-info">' +
+            '<span class="device-name">' + escapeHtml(device.name) + '</span>' +
+            '<span class="device-sn">设备SN：' + escapeHtml(device.sn) + '</span>' +
+            '<span class="device-phone">绑定手机号：' + escapeHtml(device.phone) + '</span>' +
+          '</span>' +
+          '<span class="device-check ' + (isSelected ? "checked" : "") + '" aria-hidden="true">' + (isSelected ? "✓" : "") + '</span>' +
+          '</div>' +
+          planMarkup +
+        '</div>';
+      }).join("") : '<div class="empty-inline">暂无设备</div>';
+    }
+
+    /** 展开或收起设备已开通的 PC 流量套餐信息，不改变设备勾选状态。
+     * @param {string} deviceId 设备标识
+     * @param {HTMLButtonElement} button 当前设备的套餐信息开关
+     */
+    function toggleDevicePlan(deviceId, button) {
+      const willExpand = !expandedDevicePlans.has(deviceId);
+      if (willExpand) expandedDevicePlans.add(deviceId);
+      else expandedDevicePlans.delete(deviceId);
+
+      const details = button.nextElementSibling;
+      const action = button.querySelector(".device-plan-action");
+      const arrow = button.querySelector(".device-plan-arrow");
+      button.setAttribute("aria-expanded", String(willExpand));
+      if (details) details.hidden = !willExpand;
+      if (action) action.textContent = willExpand ? "收起" : "点击查看";
+      if (arrow) arrow.textContent = willExpand ? "⌃" : "⌄";
+    }
+
+    /** 根据演示登录和工程商授权状态切换购买内容或身份提示。 */
+    function renderIdentity() {
+      const hasLogin = demoIdentity !== "logged-out";
+      const authorized = demoIdentity === "engineer";
+      elements.identityButton.textContent = authorized ? "工" : (hasLogin ? "待" : "登");
+      elements.identityButton.setAttribute("aria-label", authorized ? "已认证工程商，切换演示身份" : (hasLogin ? "待认证账号，切换演示身份" : "未登录，切换演示身份"));
+      elements.buyContent.hidden = !hasLogin || !authorized;
+      elements.buyFooter.hidden = !hasLogin || !authorized;
+      elements.identityGate.classList.toggle("visible", !hasLogin || !authorized);
+
+      if (!hasLogin) {
+        elements.identityGate.innerHTML = '<span class="gate-mark">登</span><h2>登录后开始批量购买</h2><p>登录工程商账号后，可查看当前账号下可购买的套餐和设备。</p><button class="primary-button wide-button" type="button" data-gate-action="login">登录账号</button>';
+      } else if (!authorized) {
+        elements.identityGate.innerHTML = '<span class="gate-mark">认</span><h2>需要完成工程商认证</h2><p>当前账号尚未完成工程商授权，完成认证后即可加载批量购买数据。</p><button class="primary-button wide-button" type="button" data-gate-action="authorize">模拟完成认证</button>';
+      } else {
+        elements.identityGate.innerHTML = "";
+      }
+    }
+
+    /** 同步购买页的套餐、设备和账号权限状态。 */
+    function renderBuy() {
+      renderIdentity();
+      renderPackages();
+      renderDevices();
+    }
+
+    /** 显示短暂的操作结果提示。
+     * @param {string} message 提示内容
+     */
+    function showToast(message) {
+      elements.toast.textContent = message;
+      elements.toast.classList.add("visible");
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(function () { elements.toast.classList.remove("visible"); }, 2100);
+    }
+
+    /** 切换主流程页面，并按需更新返回栈。
+     * @param {string} name 目标页面标识
+     * @param {boolean} push 是否把目标页面加入返回栈
+     */
+    function showScreen(name, push) {
+      const shouldPush = push !== false;
+      if (shouldPush && screenStack[screenStack.length - 1] !== name) screenStack.push(name);
+      document.querySelectorAll(".screen").forEach(function (screen) { screen.classList.remove("active"); });
+      const next = document.getElementById("screen-" + name);
+      if (next) next.classList.add("active");
+      elements.appShell.classList.toggle("has-route-header", name !== "buy");
+      elements.pageTitle.textContent = screenTitles[name] || "批量购买";
+      elements.backButton.hidden = name === "buy";
+      elements.ordersButton.hidden = name === "orders" || name === "detail";
+      elements.buyFooter.hidden = name !== "buy" || demoIdentity !== "engineer";
+      if (name === "buy") renderBuy();
+      if (name === "result") renderResult();
+      if (name === "orders") renderOrders();
+      if (name === "detail") renderDetail();
+      window.scrollTo(0, 0);
+    }
+
+    /** 返回上一页；有弹层时优先关闭弹层。 */
+    function goBack() {
+      if (activeModal) {
+        closeModal();
+        return;
+      }
+      if (screenStack.length > 1) {
+        screenStack.pop();
+        showScreen(screenStack[screenStack.length - 1], false);
+      } else {
+        showToast("已在批量购买首页");
+      }
+    }
+
+    /** 打开共用底部弹层并设置当前交互模式。
+     * @param {string} mode 弹层模式
+     * @param {string} title 弹层标题
+     */
+    function openModal(mode, title) {
+      activeModal = mode;
+      elements.sheetTitle.textContent = title || "请选择";
+      elements.overlay.dataset.mode = mode;
+      elements.sheetContent.innerHTML = "";
+      elements.sheetFooter.innerHTML = "";
+      elements.overlay.classList.add("visible");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeModal() {
+      activeModal = "";
+      elements.overlay.classList.remove("visible");
+      document.body.style.overflow = "";
+    }
+
+    /** 打开可搜索的项目选择器。 */
+    function openProjectPicker() {
+      openModal("projects", "选择项目");
+      elements.sheetContent.innerHTML = '<div id="projectOptions"></div>';
+      elements.sheetFooter.innerHTML = '<button class="secondary-button wide-button" type="button" data-modal-action="close">取消</button>';
+      renderProjectOptions("");
+    }
+
+    /** 按关键字渲染项目选项和可购买设备数。
+     * @param {string} query 项目搜索关键字
+     */
+    function renderProjectOptions(query) {
+      const list = document.getElementById("projectOptions");
+      if (!list) return;
+      const visibleProjects = projects;
+      list.innerHTML = visibleProjects.map(function (project) {
+        return '<button class="project-option" type="button" data-project="' + escapeHtml(project.id) + '">' + escapeHtml(project.name) + '</button>';
+      }).join("");
+    }
+
+    /** 选择项目；已有设备选中时先要求用户确认清空。
+     * @param {string} projectId 目标项目标识
+     */
+    function chooseProject(projectId) {
+      if (projectId === activeProjectId) {
+        closeModal();
+        return;
+      }
+      if (selected.size > 0) {
+        pendingProjectId = projectId;
+        openModal("switch-project", "切换项目");
+        elements.sheetContent.innerHTML = '<p style="margin:2px 0;color:var(--muted);font-size:12px;line-height:1.7">切换项目后，当前已选的 ' + selected.size + ' 台设备会清空。是否继续？</p>';
+        elements.sheetFooter.innerHTML = '<button class="secondary-button wide-button" type="button" data-modal-action="back-projects">返回选择项目</button><button class="primary-button wide-button" type="button" data-modal-action="confirm-project">清空并切换</button>';
+        return;
+      }
+      activeProjectId = projectId;
+      elements.deviceSearch.value = "";
+      closeModal();
+      renderDevices();
+    }
+
+    /** 确认切换项目并清除旧项目设备选择。 */
+    function applyPendingProject() {
+      if (!pendingProjectId) return;
+      selected.clear();
+      activeProjectId = pendingProjectId;
+      pendingProjectId = null;
+      elements.deviceSearch.value = "";
+      closeModal();
+      renderDevices();
+      showToast("项目已切换，已选设备已清空");
+    }
+
+    /** 展示套餐流量、有效期和按台价格。
+     * @param {string} packageId 套餐标识
+     */
+    function openPackageDetails(packageId) {
+      const item = packageById.get(packageId);
+      if (!item) return;
+      openModal("package", item.name + " · 套餐详情");
+      elements.sheetContent.innerHTML = '<div class="data-card">' +
+        '<div class="data-row"><span class="data-label">套餐流量</span><span class="data-value">' + escapeHtml(item.amount) + '</span></div>' +
+        '<div class="data-row"><span class="data-label">有效期</span><span class="data-value">' + escapeHtml(item.period) + '</span></div>' +
+        '<div class="data-row"><span class="data-label">开通价格</span><span class="data-value">' + money(item.price) + ' / 台</span></div>' +
+        '</div><p style="margin:10px 2px 2px;color:var(--muted);font-size:11px;line-height:1.7">' + item.description.map(escapeHtml).join("<br>") + '</p>';
+      elements.sheetFooter.innerHTML = '<button class="primary-button wide-button" type="button" data-modal-action="close">知道了</button>';
+    }
+
+    /** 校验选择并展示待支付设备与金额明细。 */
+    function openReview() {
+      if (!currentPackage()) {
+        showToast("当前没有可选套餐");
+        return;
+      }
+      if (selected.size === 0) {
+        showToast("请先选择设备");
+        return;
+      }
+      openModal("review", "确认开通套餐");
+      const item = currentPackage();
+      const selectedDevices = Array.from(selected).map(function (id) { return deviceById.get(id); }).filter(Boolean);
+      elements.sheetContent.innerHTML =
+        '<div class="info-row"><div class="info-name">套餐名称</div><div class="info-value">' + escapeHtml(item.name) + '</div></div>' +
+        '<div class="section-title">开通设备(共' + selectedDevices.length + '台)</div>' +
+        '<div class="device-scroll">' + selectedDevices.map(function (device) {
+          return '<div class="info-row"><div class="info-name">' + escapeHtml(device.name) + '</div><div class="info-value">' + escapeHtml(device.sn) + '</div></div>';
+        }).join("") + '</div>' +
+        '<div class="total-row"><span class="total-label">合计金额</span><span class="total-amount">' + money(item.price * selectedDevices.length) + '</span></div>' +
+        '<div class="pay-buttons">' +
+          '<button class="pay-button alipay" type="button" data-pay-method="alipay"><img src="assets/alipay.png" alt="">支付宝</button>' +
+          '<button class="pay-button wechat" type="button" data-pay-method="wechat"><img src="assets/wechat.png" alt="">微信支付</button>' +
+        '</div>';
+      elements.sheetFooter.innerHTML = "";
+    }
+
+    /** 打开指定支付方式的模拟收银台。
+     * @param {string} method 支付方式标识
+     * @param {string|null} orderId 续付时的已有订单号
+     */
+    function openGateway(method, orderId) {
+      const existingOrder = orderId ? orders.find(function (order) { return order.id === orderId; }) : null;
+      let order = existingOrder;
+      if (!order) {
+        order = makeCurrentOrder(method);
+        selected.clear();
+      }
+      latestOrderId = order.id;
+      resultStatus = "loading";
+      closeModal();
+      screenStack = ["buy", "result"];
+      showScreen("result", false);
+
+      const simulatedResult = new URLSearchParams(window.location.search).get("payResult") || "success";
+      window.setTimeout(function () {
+        finishPayment(simulatedResult, order.id, method);
+      }, 900);
+    }
+
+    /** 生成本地演示用的年月日时分。
+     * @returns {string} yyyy-MM-dd HH:mm 格式时间
+     */
+    function formatNow() {
+      const date = new Date();
+      const pad = function (number) { return String(number).padStart(2, "0"); };
+      return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate()) + " " + pad(date.getHours()) + ":" + pad(date.getMinutes());
+    }
+
+    /** 按当前套餐、设备和支付方式创建待支付订单。
+     * @param {string} method 支付方式标识
+     * @returns {object} 新建的订单记录
+     */
+    function makeCurrentOrder(method) {
+      const item = currentPackage();
+      orderSequence += 1;
+      const order = {
+        id: "BB" + new Date().getFullYear() + String(orderSequence).padStart(10, "0"),
+        packageId: item.id,
+        packageName: item.name,
+        count: selected.size,
+        amount: item.price * selected.size,
+        status: "pending",
+        createdAt: formatNow(),
+        paidAt: "",
+        payType: method === "alipay" ? "支付宝" : "微信支付",
+        deviceIds: Array.from(selected),
+        willSync: false
+      };
+      orders.unshift(order);
+      return order;
+    }
+
+    /** 完成模拟支付，并将结果写入订单状态。
+     * @param {string} action 成功、延迟同步或取消
+     * @param {string|null} orderId 续付订单号；新购时为空
+     * @param {string} method 支付方式标识
+     */
+    function finishPayment(action, orderId, method) {
+      let order = orderId ? orders.find(function (entry) { return entry.id === orderId; }) : null;
+      if (!order) return;
+      order.payType = method === "alipay" ? "支付宝" : "微信支付";
+
+      if (action === "success") {
+        order.status = "success";
+        order.paidAt = formatNow();
+        order.willSync = false;
+        resultStatus = "success";
+        showToast("支付成功，设备套餐已开通");
+      } else if (action === "delayed") {
+        order.status = "pending";
+        order.willSync = true;
+        resultStatus = "loading";
+        showToast("支付已完成，订单状态同步中");
+        window.setTimeout(function () { queryPaymentResult(); }, 900);
+      } else {
+        order.status = "pending";
+        order.willSync = false;
+        resultStatus = "error";
+        showToast("订单暂未支付，可在订单记录中继续支付");
+      }
+      latestOrderId = order.id;
+      renderResult();
+    }
+
+    /** 获取订单状态对应的中文文案。
+     * @param {string} status 订单状态标识
+     * @returns {string} 状态名称
+     */
+    function orderStatusLabel(status) {
+      return {
+        pending: "待支付",
+        success: "已开通",
+        partial: "部分退款",
+        refunded: "已退款",
+        closed: "已关闭"
+      }[status] || "处理中";
+    }
+
+    /** 获取订单状态标签的视觉类别。
+     * @param {string} status 订单状态标识
+     * @returns {string} CSS 状态类别
+     */
+    function statusClass(status) {
+      if (status === "success") return "success";
+      if (status === "pending") return "pending";
+      if (status === "partial" || status === "refunded" || status === "closed") return "refund";
+      return "";
+    }
+
+    /** 根据订单状态计算每台设备的开通或退款结果。
+     * @param {object} order 订单记录
+     * @returns {Array<object>} 订单设备及其退款状态
+     */
+    function orderDevices(order) {
+      return order.deviceIds.map(function (id, index) {
+        const device = deviceById.get(id) || {
+          id: id,
+          name: "设备 " + (index + 1),
+          sn: String(id).toUpperCase(),
+          phone: "--"
+        };
+        const refunded = order.status === "refunded" || (order.status === "partial" && index >= Math.ceil(order.deviceIds.length / 2));
+        return { device: device, refunded: refunded };
+      });
+    }
+
+    /** 生成订单摘要字段。
+     * @param {object} order 订单记录
+     * @param {boolean} includePayType 是否展示支付方式
+     * @returns {string} 订单摘要 HTML
+     */
+    function dataRows(order, includePayType) {
+      const openDate = order.paidAt || (order.status === "pending" ? "--" : order.createdAt);
+      return '<div class="section-title">套餐信息</div><div class="card">' +
+        '<div class="row"><span class="label">套餐名称</span><span class="value">' + escapeHtml(order.packageName) + '</span></div><div class="divider"></div>' +
+        '<div class="row"><span class="label">设备数量</span><span class="value">' + order.count + '台</span></div><div class="divider"></div>' +
+        '<div class="row"><span class="label">合计金额</span><span class="value total-amount">' + money(order.amount) + '</span></div><div class="divider"></div>' +
+        '<div class="row"><span class="label">开通日期</span><span class="value">' + escapeHtml(openDate) + '</span></div><div class="divider"></div>' +
+        '<div class="row"><span class="label">订单号</span><span class="value">' + escapeHtml(order.id) + '<button class="copy-button" type="button" data-copy-order="' + escapeHtml(order.id) + '">复制</button></span></div>' +
+      '</div>';
+    }
+
+    /** 按订单数据复刻详情页中的设备 SN 列表。 */
+    function renderDeviceRows(order) {
+      const rows = orderDevices(order).map(function (entry, index) {
+        return (index ? '<div class="divider"></div>' : '') +
+          '<div class="device-item"><div class="device-inner"><div class="device-name">' + escapeHtml(entry.device.name) + '</div><div class="device-sn">设备SN：' + escapeHtml(entry.device.sn) + '</div></div>' +
+          (entry.refunded ? '<div class="device-status">已退款</div>' : '') + '</div>';
+      }).join("");
+      return '<div class="section-title">已开通设备（' + order.count + '）</div><div class="card">' + rows + '</div>';
+    }
+
+    /** 按当前生产结果页的加载、成功和失败状态渲染内容。 */
+    function renderResult() {
+      elements.appShell.classList.toggle("is-error", resultStatus === "error");
+      const order = orders.find(function (entry) { return entry.id === latestOrderId; });
+      if (resultStatus === "loading") {
+        elements.resultContent.innerHTML = '<div class="msg-section"><span class="result-icon loading" aria-label="加载中">◌</span></div>';
+        return;
+      }
+      if (!order || resultStatus === "error") {
+        elements.resultContent.innerHTML =
+          '<div class="msg-section"><span class="result-icon error" aria-hidden="true">×</span><div class="result-tip">支付失败</div></div>' +
+          '<footer class="bottom-bar result-bottom"><button class="primary-button" type="button" data-screen="buy">重新购买</button></footer>';
+      } else {
+        elements.resultContent.innerHTML =
+          '<div class="msg-section"><span class="result-icon" aria-hidden="true">✓</span><div class="result-tip">支付成功</div></div>' +
+          '<div class="result-detail">' + dataRows(order, false) + renderDeviceRows(order) + '</div>' +
+          '<footer class="bottom-bar result-bottom"><div class="result-actions"><button class="secondary-button" type="button" data-screen="orders">查看订单</button><button class="primary-button" type="button" data-screen="buy">继续购买</button></div></footer>';
+      }
+    }
+
+    /** 模拟查询支付状态，覆盖延迟同步和仍未支付两种结果。 */
+    function queryPaymentResult() {
+      const order = orders.find(function (entry) { return entry.id === latestOrderId; });
+      if (!order) return;
+      if (order.status === "success") {
+        showToast("订单已支付");
+        renderResult();
+        return;
+      }
+      if (order.willSync) {
+        order.status = "success";
+        order.paidAt = formatNow();
+        order.willSync = false;
+        resultStatus = "success";
+        showToast("已查询到支付成功");
+      } else {
+        resultStatus = "error";
+        showToast(order.willSync ? "支付状态同步中，请稍后再查" : "订单仍待支付，可继续支付原订单");
+      }
+      renderResult();
+    }
+
+    /** 按当前状态筛选并渲染订单列表。 */
+    function renderOrders() {
+      const filtered = orders;
+      const shown = filtered.slice(0, visibleOrderCount);
+      elements.orderCount.textContent = filtered.length + " 笔";
+      elements.orderList.innerHTML = shown.length ? shown.map(function (order) {
+        return '<div class="order-item" role="button" tabindex="0" data-order="' + escapeHtml(order.id) + '">' +
+          '<div class="order-inner"><div class="order-content">' +
+            '<div class="order-package">' + escapeHtml(order.packageName) + '</div>' +
+            '<div class="order-number">' + escapeHtml(order.id) + '</div>' +
+            '<div class="order-time">开通时间：' + escapeHtml(order.paidAt || "--") + '</div>' +
+            '<div class="order-amount">订单金额：<strong>' + money(order.amount) + '</strong></div>' +
+          '</div><div class="order-meta"><div class="order-meta-top"><span class="order-qty">' + order.count + '台设备</span><span class="status-pill ' + statusClass(order.status) + '">' + orderStatusLabel(order.status) + '</span></div><div class="order-view">查看详情 &gt;</div></div></div>' +
+        '</div>';
+      }).join("") : '<div class="empty-state">暂无符合条件的订单</div>';
+      elements.loadMoreButton.hidden = shown.length >= filtered.length;
+    }
+
+    /** 根据订单状态生成订单摘要、逐台明细和可执行操作。 */
+    function renderDetail() {
+      const order = orders.find(function (entry) { return entry.id === currentDetailId; });
+      if (!order) {
+        elements.detailContent.innerHTML = '<div class="empty-state">未找到订单，请返回订单记录重试。</div>';
+        return;
+      }
+      elements.detailContent.innerHTML = dataRows(order, false) + renderDeviceRows(order);
+    }
+
+    /** 打开指定订单的详情页。
+     * @param {string} orderId 订单号
+     */
+    function openOrderDetail(orderId) {
+      currentDetailId = orderId;
+      showScreen("detail");
+    }
+
+    /** 追加一页本地假订单，模拟无限列表的加载更多。 */
+    function createMoreOrders() {
+      const base = devices.slice(23, 27).map(function (device) { return device.id; });
+      for (let index = 0; index < 5; index += 1) {
+        const orderNumber = orderSequence + index + 1;
+        const statusList = ["success", "closed", "pending", "refunded", "success"];
+        const packageItem = packages[index % packages.length];
+        const order = makeOrder(
+          "BB2026100" + String(orderNumber).padStart(6, "0"),
+          packageItem.id,
+          base.length,
+          statusList[index],
+          "2026-10-0" + (4 - (index % 3)) + " 14:2" + index,
+          base.slice(),
+          index % 2 ? "微信支付" : "支付宝"
+        );
+        orders.push(order);
+      }
+      orderSequence += 5;
+      visibleOrderCount += 5;
+      renderOrders();
+      showToast("已加载更多订单");
+    }
+
+    /** 更新当前套餐并同步单价、金额和套餐选中样式。
+     * @param {string} packageId 套餐标识
+     */
+    function setPackage(packageId) {
+      if (!packageById.has(packageId)) return;
+      currentPackageId = packageId;
+      renderPackages();
+      renderDevices();
+    }
+
+    /** 切换单台设备选择，并阻止超过单笔上限。
+     * @param {string} deviceId 设备标识
+     */
+    function toggleDevice(deviceId) {
+      if (!deviceById.has(deviceId)) return;
+      if (selected.has(deviceId)) {
+        selected.delete(deviceId);
+      } else if (selected.size >= MAX_DEVICE_COUNT) {
+        showToast("单笔最多选择 " + MAX_DEVICE_COUNT + " 台设备");
+        return;
+      } else {
+        selected.add(deviceId);
+      }
+      renderDevices();
+    }
+
+    /** 按当前项目执行全选或取消全选，单次最多选择 50 台。 */
+    function selectVisibleDevices() {
+      const visible = visibleDevices();
+      if (!visible.length) {
+        showToast("当前没有可选设备");
+        return;
+      }
+      const targetCount = Math.min(visible.length, MAX_DEVICE_COUNT);
+      if (selected.size === targetCount) {
+        selected.clear();
+        renderDevices();
+        return;
+      }
+      selected.clear();
+      if (targetCount === 0) {
+        showToast("当前没有可选设备");
+        return;
+      }
+      visible.slice(0, targetCount).forEach(function (device) { selected.add(device.id); });
+      renderDevices();
+      if (visible.length > MAX_DEVICE_COUNT) {
+        showToast("单次最多选择 " + MAX_DEVICE_COUNT + " 台设备");
+      } else {
+        showToast("已全选当前项目设备");
+      }
+    }
+
+    /** 清除本次购买已选设备。 */
+    function clearSelection() {
+      if (selected.size === 0) {
+        showToast("当前没有已选设备");
+        return;
+      }
+      selected.clear();
+      renderDevices();
+      showToast("已清空设备选择");
+    }
+
+    /** 将项目筛选重置为全部项目。 */
+    function resetProject() {
+      elements.deviceSearch.value = "";
+      if (activeProjectId === "all") {
+        renderDevices();
+        return;
+      }
+      chooseProject("all");
+    }
+
+    /** 切换演示账号状态并更新认证门禁。
+     * @param {string} identity 工程商、未登录或待认证状态
+     */
+    function switchIdentity(identity) {
+      demoIdentity = identity;
+      closeModal();
+      renderBuy();
+      if (identity === "logged-out") showToast("已切换为未登录状态");
+      else if (identity === "unauthorized") showToast("当前账号待工程商认证");
+      else showToast("已切换为已认证工程商");
+    }
+
+    /** 展示登录及工程商授权的演示状态切换。 */
+    function openIdentityPicker() {
+      openModal("identity", "演示账号状态");
+      const choices = [
+        { id: "engineer", name: "已登录 · 工程商已认证" },
+        { id: "logged-out", name: "未登录" },
+        { id: "unauthorized", name: "已登录 · 待工程商认证" }
+      ];
+      elements.sheetContent.innerHTML = '<div class="demo-state-list">' + choices.map(function (choice) {
+        return '<button class="demo-state" type="button" data-identity="' + choice.id + '" aria-pressed="' + (demoIdentity === choice.id) + '">' + escapeHtml(choice.name) + '<span>' + (demoIdentity === choice.id ? "当前" : "选择") + '</span></button>';
+      }).join("") + '</div>';
+      elements.sheetFooter.innerHTML = '<button class="secondary-button wide-button" type="button" data-modal-action="close">关闭</button>';
+    }
+
+    /** 处理登录门禁中的登录或模拟认证操作。
+     * @param {string} action 门禁操作标识
+     */
+    function handleGateAction(action) {
+      if (action === "login") switchIdentity("unauthorized");
+      if (action === "authorize") switchIdentity("engineer");
+    }
+
+    /** 分发弹层底部按钮动作。
+     * @param {string} action 弹层操作标识
+     */
+    function handleModalAction(action) {
+      if (action === "close") closeModal();
+      if (action === "back-projects") openProjectPicker();
+      if (action === "confirm-project") applyPendingProject();
+      if (action === "confirm-close-order") confirmClosePendingOrder();
+    }
+
+    /** 复制订单号；本地文件环境不支持剪贴板时显示订单号提示。
+     * @param {string} orderId 订单号
+     */
+    function copyOrder(orderId) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(orderId).then(function () { showToast("订单号已复制"); }).catch(function () { showToast(orderId); });
+      } else {
+        showToast("订单号：" + orderId);
+      }
+    }
+
+    /** 将历史订单套餐带回购买页，重新选择设备。
+     * @param {string} orderId 历史订单号
+     */
+    function rebuy(orderId) {
+      const order = orders.find(function (entry) { return entry.id === orderId; });
+      if (!order) return;
+      setPackage(order.packageId);
+      selected.clear();
+      activeProjectId = "all";
+      elements.deviceSearch.value = "";
+      screenStack = ["buy"];
+      showScreen("buy", false);
+      showToast("已带入原套餐，请重新选择设备");
+    }
+
+    /** 从待支付订单详情续付原订单。
+     * @param {string} orderId 待支付订单号
+     */
+    function continuePendingOrder(orderId) {
+      const order = orders.find(function (entry) { return entry.id === orderId; });
+      if (!order || order.status !== "pending") return;
+      openGateway(order.payType === "支付宝" ? "alipay" : "wechat", orderId);
+    }
+
+    /** 关闭待支付订单并刷新订单详情和列表。
+     * @param {string} orderId 待支付订单号
+     */
+    function closePendingOrder(orderId) {
+      const order = orders.find(function (entry) { return entry.id === orderId; });
+      if (!order || order.status !== "pending") return;
+      pendingCloseOrderId = orderId;
+      openModal("close-order", "关闭待支付订单");
+      elements.sheetContent.innerHTML = '<p style="margin:2px 0;color:var(--muted);font-size:12px;line-height:1.7">关闭后将无法继续支付该订单。确认关闭订单 ' + escapeHtml(order.id) + '？</p>';
+      elements.sheetFooter.innerHTML = '<button class="secondary-button wide-button" type="button" data-modal-action="close">暂不关闭</button><button class="danger-button wide-button" type="button" data-modal-action="confirm-close-order">确认关闭订单</button>';
+    }
+
+    /** 执行已二次确认的订单关闭操作。 */
+    function confirmClosePendingOrder() {
+      const order = orders.find(function (entry) { return entry.id === pendingCloseOrderId; });
+      if (!order || order.status !== "pending") {
+        closeModal();
+        return;
+      }
+      order.status = "closed";
+      pendingCloseOrderId = null;
+      closeModal();
+      renderDetail();
+      renderOrders();
+      showToast("订单已关闭");
+    }
+
+    document.getElementById("packageList").addEventListener("click", function (event) {
+      const detailButton = event.target.closest("[data-package-details]");
+      if (detailButton) {
+        event.stopPropagation();
+        openPackageDetails(detailButton.getAttribute("data-package-details"));
+        return;
+      }
+      const card = event.target.closest("[data-package]");
+      if (card) setPackage(card.getAttribute("data-package"));
+    });
+    document.getElementById("packageList").addEventListener("keydown", function (event) {
+      if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-package]")) {
+        event.preventDefault();
+        setPackage(event.target.getAttribute("data-package"));
+      }
+    });
+
+    elements.deviceList.addEventListener("click", function (event) {
+      const planToggle = event.target.closest("[data-device-plan]");
+      if (planToggle) {
+        toggleDevicePlan(planToggle.getAttribute("data-device-plan"), planToggle);
+        return;
+      }
+      const row = event.target.closest("[data-device]");
+      if (row) toggleDevice(row.getAttribute("data-device"));
+    });
+    elements.deviceList.addEventListener("keydown", function (event) {
+      if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-device]")) {
+        event.preventDefault();
+        toggleDevice(event.target.getAttribute("data-device"));
+      }
+    });
+
+    elements.projectButton.addEventListener("click", openProjectPicker);
+    elements.resetProjectButton.addEventListener("click", resetProject);
+    elements.deviceSearch.addEventListener("input", renderDevices);
+    elements.selectVisibleButton.addEventListener("click", selectVisibleDevices);
+    elements.clearSelectionButton.addEventListener("click", clearSelection);
+    elements.reviewButton.addEventListener("click", openReview);
+    elements.ordersButton.addEventListener("click", function () { showScreen("orders"); });
+    elements.buyOrderEntry.addEventListener("click", function () { showScreen("orders"); });
+    elements.buyOrderEntry.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") showScreen("orders");
+    });
+    elements.backButton.addEventListener("click", goBack);
+    elements.identityButton.addEventListener("click", openIdentityPicker);
+    elements.sheetClose.addEventListener("click", closeModal);
+    elements.overlay.addEventListener("click", function (event) {
+      if (event.target === elements.overlay) closeModal();
+    });
+    elements.orderFilters.addEventListener("click", function (event) {
+      const tab = event.target.closest("[data-filter]");
+      if (!tab) return;
+      currentFilter = tab.getAttribute("data-filter");
+      elements.orderFilters.querySelectorAll(".filter-tab").forEach(function (button) {
+        const active = button === tab;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+      });
+      visibleOrderCount = 5;
+      renderOrders();
+    });
+    elements.orderList.addEventListener("click", function (event) {
+      const row = event.target.closest("[data-order]");
+      if (row) openOrderDetail(row.getAttribute("data-order"));
+    });
+    elements.orderList.addEventListener("keydown", function (event) {
+      if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-order]")) {
+        event.preventDefault();
+        openOrderDetail(event.target.getAttribute("data-order"));
+      }
+    });
+    elements.loadMoreButton.addEventListener("click", createMoreOrders);
+
+    elements.sheetContent.addEventListener("click", function (event) {
+      const projectButton = event.target.closest("[data-project]");
+      if (projectButton) {
+        chooseProject(projectButton.getAttribute("data-project"));
+        return;
+      }
+      const identityButton = event.target.closest("[data-identity]");
+      if (identityButton) {
+        switchIdentity(identityButton.getAttribute("data-identity"));
+        return;
+      }
+      const paymentButton = event.target.closest("[data-pay-method]");
+      if (paymentButton) openGateway(paymentButton.getAttribute("data-pay-method"));
+    });
+    elements.sheetFooter.addEventListener("click", function (event) {
+      const actionButton = event.target.closest("[data-modal-action]");
+      if (actionButton) {
+        handleModalAction(actionButton.getAttribute("data-modal-action"));
+        return;
+      }
+      const methodButton = event.target.closest("[data-pay-method]");
+      if (methodButton) openGateway(methodButton.getAttribute("data-pay-method"));
+    });
+
+    document.addEventListener("click", function (event) {
+      const gateButton = event.target.closest("[data-gate-action]");
+      if (gateButton) {
+        handleGateAction(gateButton.getAttribute("data-gate-action"));
+        return;
+      }
+      const screenButton = event.target.closest("[data-screen]");
+      if (screenButton) {
+        const destination = screenButton.getAttribute("data-screen");
+        if (destination === "buy") screenStack = ["buy"];
+        else if (screenStack[screenStack.length - 1] !== destination) screenStack.push(destination);
+        showScreen(destination, false);
+        return;
+      }
+      const copyButton = event.target.closest("[data-copy-order]");
+      if (copyButton) {
+        copyOrder(copyButton.getAttribute("data-copy-order"));
+        return;
+      }
+      const actionButton = event.target.closest("[data-action]");
+      if (!actionButton) return;
+      const action = actionButton.getAttribute("data-action");
+      const orderId = actionButton.getAttribute("data-order");
+      if (action === "query-result") queryPaymentResult();
+      if (action === "sync-result") {
+        const order = orders.find(function (entry) { return entry.id === latestOrderId; });
+        if (order) {
+          order.willSync = true;
+          queryPaymentResult();
+        }
+      }
+      if (action === "continue-order") continuePendingOrder(orderId);
+      if (action === "continue-result") continuePendingOrder(orderId);
+      if (action === "close-order") closePendingOrder(orderId);
+      if (action === "rebuy") rebuy(orderId);
+    });
+
+    elements.sheetContent.addEventListener("click", function (event) {
+      const gatewayButton = event.target.closest("[data-gateway-action]");
+      if (gatewayButton) {
+        finishPayment(
+          gatewayButton.getAttribute("data-gateway-action"),
+          gatewayButton.getAttribute("data-order-id"),
+          gatewayButton.getAttribute("data-method")
+        );
+      }
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        if (activeModal) closeModal();
+        else goBack();
+      }
+    });
+
+    renderBuy();
+    renderOrders();
+  </script>
+</body>
+</html>
